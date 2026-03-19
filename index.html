@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Lojas — Minas Gerais</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;overflow:hidden;background:#f0f4f8}
+#app{display:flex;flex-direction:column;height:100vh}
+
+#top{
+  background:#fff;border-bottom:1px solid #d1dce8;
+  padding:0 18px;height:52px;display:flex;align-items:center;gap:14px;
+  flex-shrink:0;z-index:500;position:relative;
+  box-shadow:0 2px 12px rgba(15,50,100,.08)
+}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
+.logo-text{font-size:13px;font-weight:800;color:#0d2d4e;line-height:1.2}
+.logo-text small{display:block;font-size:9px;font-weight:500;color:#64748b;letter-spacing:.3px}
+.vsep{width:1px;height:26px;background:#e2eaf2;flex-shrink:0}
+
+.fg{display:flex;flex-direction:column;gap:2px}
+.fl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8}
+.sw{position:relative}
+.sw select{
+  appearance:none;background:#f5f8fc;border:1.5px solid #cbd5e1;
+  color:#1e3a5f;font-size:12px;font-weight:600;font-family:inherit;
+  padding:5px 28px 5px 10px;border-radius:7px;cursor:pointer;outline:none;
+  transition:all .18s;min-width:178px
+}
+.sw select:hover{border-color:#3b82f6}
+.sw select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.sw.active select{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+.arr{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:#94a3b8;font-size:9px}
+
+.kpis{display:flex;gap:6px;margin-left:auto}
+.kpi{background:#f5f8fc;border:1px solid #dde6f0;padding:3px 14px;border-radius:7px;text-align:center}
+.kpi b{display:block;font-size:17px;font-weight:800;color:#0d2d4e;line-height:1.15}
+.kpi small{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-top:1px}
+
+#cbtn{
+  display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;
+  border:1.5px solid #e2eaf2;background:#f5f8fc;color:#94a3b8;
+  font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;font-family:inherit;flex-shrink:0
+}
+#cbtn:hover,#cbtn.on{border-color:#e94560;color:#e94560;background:#fff5f6}
+
+#map{flex:1;z-index:1}
+
+#legend{
+  position:absolute;top:64px;right:14px;
+  background:rgba(255,255,255,.97);border:1px solid #d1dce8;border-radius:12px;
+  padding:12px 14px;z-index:400;box-shadow:0 4px 20px rgba(15,50,100,.10);min-width:158px
+}
+#legend h4{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #f0f4f8}
+.lr{display:flex;align-items:center;gap:7px;font-size:11px;margin-bottom:4px;padding:3px 6px;border-radius:5px;cursor:pointer;transition:background .12s}
+.lr:hover{background:#f5f8fc}
+.lr.hl{background:#eff6ff}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.ln{flex:1;font-weight:500;color:#334155}
+.lc{font-size:10px;font-weight:700;color:#94a3b8;background:#f0f4f8;padding:1px 6px;border-radius:6px}
+
+
+
+.leaflet-control-zoom{border:none!important;border-radius:9px!important;overflow:hidden;box-shadow:0 2px 10px rgba(15,50,100,.15)!important}
+.leaflet-control-zoom a{background:#fff!important;color:#334155!important;border-color:#d1dce8!important;width:30px!important;height:30px!important;line-height:30px!important}
+.leaflet-control-zoom a:hover{background:#f5f8fc!important}
+.leaflet-popup-content-wrapper{background:#fff;border:1px solid #d1dce8;border-radius:12px;box-shadow:0 8px 30px rgba(15,50,100,.15);color:#334155}
+.leaflet-popup-tip{background:#fff}
+.leaflet-popup-content{margin:12px 15px}
+.leaflet-control-attribution{background:rgba(255,255,255,.8)!important;color:#94a3b8!important;font-size:9px!important}
+.leaflet-control-attribution a{color:#64748b!important}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="top">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </div>
+    <div class="logo-text">Lojas Minas Gerais <small>Leaflet · GeoJSON IBGE · Limite + Mesorregiões</small></div>
+  </div>
+  <div class="vsep"></div>
+  <div class="fg">
+    <span class="fl">Regional</span>
+    <div class="sw" id="sw-reg">
+      <select id="sel-reg"><option value="">Todas as Regionais</option></select>
+      <span class="arr">▾</span>
+    </div>
+  </div>
+  <div class="fg">
+    <span class="fl">Mesorregião</span>
+    <div class="sw" id="sw-meso">
+      <select id="sel-meso"><option value="">Todas as Mesorregiões</option></select>
+      <span class="arr">▾</span>
+    </div>
+  </div>
+  <button id="cbtn">
+    <svg width="9" height="9" viewBox="0 0 10 10" stroke="currentColor" stroke-width="2.2"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+    Limpar
+  </button>
+  <div class="kpis">
+    <div class="kpi"><b id="kn">83</b><small>Lojas</small></div>
+    <div class="kpi"><b>9</b><small>Regionais</small></div>
+    <div class="kpi"><b>11</b><small>Mesos</small></div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div id="legend">
+  <h4>Regionais</h4>
+  <div id="leg-rows"></div>
+</div>
+
+
+
+</div>
+
+<script>
+function loadScript(src, cb){
+  var s = document.createElement('script');
+  s.src = src;
+  s.onload = cb;
+  s.onerror = function(){ console.error('Failed to load', src); };
+  document.head.appendChild(s);
+}
+
+loadScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', function(){
+function init(){
+const COLORS={
+  "REGIONAL 1":"#E63946","REGIONAL 2":"#F4A261","REGIONAL 3":"#2A9D8F",
+  "REGIONAL 4":"#457B9D","REGIONAL 5":"#9B5DE5","REGIONAL 6":"#F9C74F",
+  "REGIONAL 7":"#FF6B6B","REGIONAL 8":"#118AB2","REGIONAL 9":"#06D6A0"
+};
+
+const STORES=[
+  {id:201,n:"DIVINÓPOLIS",addr:"AV. AUTORAMA, 1313 - Nº 201 - SÃO JUDAS TADEU, DIVINÓPOLIS - MG, 35501-221",city:"DIVINÓPOLIS",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0001-38",lat:-20.1392,lon:-44.8839},
+  {id:202,n:"CONTAGEM",addr:"AV. CRUZEIRO DO SUL, 77 - JARDIM RIACHO DAS PEDRAS, CONTAGEM - MG, 32241-310",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0002-19",lat:-19.9317,lon:-44.0536},
+  {id:203,n:"ADM",addr:"AV. BARÃO HOMEM DE MELO, 3090 - ESTORIL, BELO HORIZONTE - MG, 30494-085",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0003-08",lat:-19.9167,lon:-43.9345},
+  {id:204,n:"SANTA LUZIA",addr:"DISTRITO INDUSTRIAL - AV. DAS INDÚSTRIAS, 2915 - DESEMBARGADOR MELLO JUNIOR, SANTA LUZIA - MG, 33040-270",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0004-80",lat:-19.7703,lon:-43.8517},
+  {id:205,n:"GOVERNADOR VALADARES",addr:"AV. JK, 3519 - SANTA RITA, GOV. VALADARES - MG, 35040-260",city:"GOV. VALADARES",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0005-61",lat:-18.8536,lon:-41.9494},
+  {id:206,n:"JUIZ DE FORA",addr:"AV. PRESIDENTE JUSCELINO KUBITSCHEK, 51 - INDUSTRIAL, JUIZ DE FORA - MG, 36081-000",city:"JUIZ DE FORA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0006-42",lat:-21.765,lon:-43.3503},
+  {id:207,n:"UBERABA",addr:"AV. SANTOS DUMONT, 1555 - SANTA MARIA, UBERABA - MG, 38050-400",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0007-23",lat:-19.7486,lon:-47.9317},
+  {id:209,n:"SETE LAGOAS",addr:"R. AFONSO CARLOS CAPANEMA, 501 - SANTO ANTONIO, SETE LAGOAS - MG, 35701-248",city:"SETE LAGOAS",r:"REGIONAL 8",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0009-95",lat:-19.4678,lon:-44.2469},
+  {id:210,n:"UBERLÂNDIA",addr:"R. CLEONE CAIRO GOMES, 777 - SEGISMUNDO PEREIRA, UBERLÂNDIA - MG, 33840-242",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0010-29",lat:-18.9188,lon:-48.2769},
+  {id:211,n:"SÃO JOAQUIM",addr:"R. DIAMANTE, 1280 - SÃO JOAQUIM, CONTAGEM - MG, 32113-000",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0011-00",lat:-19.9217,lon:-44.0536},
+  {id:212,n:"CD - HORTI",addr:"AV. GERALDO ROCHA, 800 - CHÁCARA COTIA, CONTAGEM - MG, 32183-054",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0012-90",lat:-19.9117,lon:-44.0536},
+  {id:213,n:"PATOS DE MINAS",addr:"AV. FÁTIMA PORTO, 4065 - JARDIM ANDRADES, PATOS DE MINAS - MG, 38706-093",city:"PATOS DE MINAS",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0013-71",lat:-18.5786,lon:-46.5181},
+  {id:214,n:"ITUIUTABA",addr:"AVENIDA MINAS GERAIS, Nº 2901 GERSON BADUY II, ITUIUTABA - MG, 38304-285",city:"ITUIUTABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0014-52",lat:-18.9719,lon:-49.4636},
+  {id:215,n:"ALFENAS",addr:"AV. MÁRIO BARBOSA VIEIRA, 250 - LOTEAMENTO TREVO, ALFENAS - MG, 37130-000",city:"ALFENAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0015-33",lat:-21.4281,lon:-45.9472},
+  {id:216,n:"POUSO ALEGRE",addr:"BR 459, KM 103, S/Nº - FATIMA, POUSO ALEGRE - MG, 37550-000",city:"POUSO ALEGRE",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0016-14",lat:-22.2296,lon:-45.9361},
+  {id:217,n:"SANTANA PARAÍSO",addr:"R. 3, Nº 173 - PARQUE VENEZA, SANTANA DO PARAÍSO - MG, 35167-000",city:"SANTANA DO PARAÍSO",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0017-03",lat:-19.3703,lon:-42.548},
+  {id:218,n:"ARAPORÃ",addr:"AV. SANTA BÁRBARA, Nº 13, ARAPORÃ - MG, 38435-000",city:"ARAPORÃ",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0018-86",lat:-18.4428,lon:-49.4012},
+  {id:219,n:"MONTES CLAROS",addr:"AV. FRANCISCO GAETANI, 2029 - MAJ. PRATES, MONTES CLAROS - MG, 39403-202",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0019-67",lat:-16.7353,lon:-43.8628},
+  {id:220,n:"UBÁ",addr:"RODOVIA MGT 265, Nº 2650 EIXO RODOVIÁRIO, UBÁ - MG, 36500-000",city:"UBÁ",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0020-09",lat:-21.1186,lon:-42.9433},
+  {id:221,n:"ARAGUARI",addr:"AV. TEODORETO VELOSO DE CARVALHO, 3800 - SIBIPIRUNA, ARAGUARI - MG, 38445-198",city:"ARAGUARI",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0021-81",lat:-18.6483,lon:-48.1878},
+  {id:222,n:"UBERLÂNDIA II",addr:"R. DIAMANTE, 196 - JARDIM PATRICIA, UBERLÂNDIA - MG, 38414-150",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0022-62",lat:-18.9088,lon:-48.2769},
+  {id:223,n:"UBERABA II",addr:"AVENIDA A, 507 - PARQUE DAS LARANJEIRAS, UBERABA - MG, 38046-395",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0023-43",lat:-19.7386,lon:-47.9317},
+  {id:224,n:"PARACATU",addr:"R. BRASÍLIA, 460 - AMOREIRAS II, PARACATU - MG, 38608-264",city:"PARACATU",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0024-24",lat:-17.2219,lon:-46.8758},
+  {id:225,n:"PATROCÍNIO",addr:"AV. FARIA PEREIRA, 4554 - INDUSTRIAL, PATROCÍNIO - MG, 38740-512",city:"PATROCÍNIO",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0025-05",lat:-18.9436,lon:-46.993},
+  {id:226,n:"PARÁ DE MINAS",addr:"AV. PRES. VARGAS, 3465 - MART MINAS, PARÁ DE MINAS - MG, 35660-970",city:"PARÁ DE MINAS",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0026-96",lat:-19.8564,lon:-44.6153},
+  {id:227,n:"TRÊS CORAÇÕES",addr:"AV. REI PELÉ, 3000 - CIDADE JARDIM, TRÊS CORAÇÕES - MG, 37411-150",city:"TRÊS CORAÇÕES",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0027-77",lat:-21.6942,lon:-45.2575},
+  {id:228,n:"ARAXÁ",addr:"AV. TENENTE-CORONEL HERMENEGILDO MAGALHÃES, 500 - OROZINO TEIXEIRA, ARAXÁ - MG, 38181-431",city:"ARAXÁ",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0028-58",lat:-19.5931,lon:-46.9411},
+  {id:229,n:"LAVRAS",addr:"R. PAULO CAMILO DE FIGUEIREDO, Nº 67 - JARDIM FLORESTA, LAVRAS - MG, 37200-000",city:"LAVRAS",r:"REGIONAL 5",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0029-39",lat:-21.2453,lon:-44.9994},
+  {id:230,n:"BARBACENA",addr:"R. DEMÉTRIO RIBEIRO, Nº 1125 - SANTO ANTÔNIO, BARBACENA - MG, 36204-230",city:"BARBACENA",r:"REGIONAL 6",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0030-72",lat:-21.2267,lon:-43.7736},
+  {id:231,n:"PASSOS",addr:"AV. ARLINDO FIGUEIREDO, 2211 - SÃO FRANCISCO, PASSOS - MG, 37902-027",city:"PASSOS",r:"REGIONAL 9",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0031-53",lat:-20.7186,lon:-46.61},
+  {id:232,n:"ITAÚNA",addr:"R. JACINTO FERREIRA, 491 - VILA TAVARES, ITAÚNA - MG, 35680-070",city:"ITAÚNA",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0032-34",lat:-20.075,lon:-44.5756},
+  {id:233,n:"TEÓFILO OTONI",addr:"AV. DR. LUIZ BOALI PORTO SALMAN, 2400 - CASTRO PIRES, TEÓFILO OTONI - MG, 39801-610",city:"TEÓFILO OTONI",r:"REGIONAL 2",meso:"VALE DO MUCURI",cnpj:"04.737.552/0033-15",lat:-17.8578,lon:-41.5053},
+  {id:234,n:"CONS LAFAIETE",addr:"BR-040, KM 627 - Nº 27900 - CARIJÓS, CONSELHEIRO LAFAIETE - MG, 36406-080",city:"CONSELHEIRO LAFAIETE",r:"REGIONAL 6",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0034-04",lat:-20.6597,lon:-43.7869},
+  {id:235,n:"DAVID SARNOFF",addr:"AV. GENERAL DAVID SARNOFF, 3185 - GALPÃO 1 E 2 E 3 - CIDADE INDUSTRIAL, CONTAGEM - MG, 32210-110",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0035-87",lat:-19.9017,lon:-44.0536},
+  {id:236,n:"VARGINHA",addr:"AV. DR. MARIO FROTA, Nº 200 - SANTA MARIA, VARGINHA - MG, 37044-270",city:"VARGINHA",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0036-68",lat:-21.5514,lon:-45.4303},
+  {id:237,n:"DIVINÓPOLIS II",addr:"R. RIO DE JANEIRO, Nº2220 - IPIRANGA, DIVINÓPOLIS - MG, 35502-456",city:"DIVINÓPOLIS",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0037-49",lat:-20.1292,lon:-44.8839},
+  {id:238,n:"UBERLÂNDIA III",addr:"AV. VER. CARLITO CORDEIRO, 41 - JARDIM BOTÂNICO, UBERLÂNDIA - MG, 38410-665",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0038-20",lat:-18.8988,lon:-48.2769},
+  {id:239,n:"ITABIRA",addr:"AV. DR. PEDRO GUERRA, 1282 - GABIROBA, ITABIRA - MG, 35900-970",city:"ITABIRA",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0039-00",lat:-19.6197,lon:-43.2264},
+  {id:240,n:"UNAÍ",addr:"R. ARLÍNDO GOMES BRANQUINHO, Nº 35 - CAPIM BRANCO, UNAÍ - MG, 38616-114",city:"UNAÍ",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0040-44",lat:-16.3608,lon:-46.9019},
+  {id:241,n:"SÃO JOÃO DEL REI",addr:"AV. TRINTA E UM DE MARÇO, Nº 4.000 - SÃO FRANCISCO (COLÔNIA DO MARÇAL), SÃO JOÃO DEL REI - MG, 36302-016",city:"SÃO JOÃO DEL REI",r:"REGIONAL 6",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0041-25",lat:-21.1361,lon:-44.2628},
+  {id:242,n:"POÇOS DE CALDAS",addr:"AV. ALCOA, 1133 - JARDIM PARAISO, POÇOS DE CALDAS - MG, 37706-078",city:"POÇOS DE CALDAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0042-06",lat:-21.7872,lon:-46.5619},
+  {id:244,n:"JOÃO MONLEVADE",addr:"ESTR. AC. A AVENIDA ALBERTO DE LIMA, 1655 - NOVA ACLIMAÇÃO, JOÃO MONLEVADE - MG, 35931-185",city:"JOÃO MONLEVADE",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0044-78",lat:-19.8131,lon:-43.1728},
+  {id:245,n:"PATOS DE MINAS II",addr:"AV. MARABÁ, Nº4587 - BELA VISTA, PATOS DE MINAS - MG, 38703-236",city:"PATOS DE MINAS",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0045-59",lat:-18.5686,lon:-46.5181},
+  {id:246,n:"UBERLÂNDIA IV",addr:"AV. ANTÔNIO THOMAZ FERREIRA DE REZENDE, 703 - MARTA HELENA, UBERLÂNDIA - MG, 38402-236",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0046-30",lat:-18.8888,lon:-48.2769},
+  {id:247,n:"BOM DESPACHO",addr:"AV. DR. ROBERTO DE MELO QUEIROZ, Nº 1.793 - NOVO SÃO JOÃO, BOM DESPACHO - MG, 35600-000",city:"BOM DESPACHO",r:"REGIONAL 9",meso:"CENTRAL MINEIRA",cnpj:"04.737.552/0047-10",lat:-19.7272,lon:-45.2553},
+  {id:248,n:"CAMPO BELO",addr:"AV. SÃO JOÃO, Nº 1.305 - JARDIM AMÉRICA, CAMPO BELO - MG, 37270-000",city:"CAMPO BELO",r:"REGIONAL 5",meso:"OESTE DE MINAS",cnpj:"04.737.552/0048-00",lat:-20.8969,lon:-45.2728},
+  {id:249,n:"MONTE CARMELO",addr:"AV. DAS PALMEIRAS, 370 - GOLDEN PARK, MONTE CARMELO - MG, 38500-000",city:"MONTE CARMELO",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0049-82",lat:-18.7303,lon:-47.4992},
+  {id:250,n:"JANAÚBA",addr:"AV. BRASIL, 1.701 - ESPLANADA, JANAÚBA - MG, 39445-102",city:"JANAÚBA",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0050-16",lat:-15.8025,lon:-43.3083},
+  {id:251,n:"SERRANO",addr:"AV. HERÁCLITO MOURÃO DE MIRANDA, 91 - SERRANO, BELO HORIZONTE - MG, 30882-150",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0051-05",lat:-19.9067,lon:-43.9345},
+  {id:252,n:"NOVA LIMA",addr:"ROD. JOSÉ FRANCISCO DA SILVA, KM 24 - Nº 250 - CHÁCARA BOM RETIRO, NOVA LIMA - MG, 34002-000",city:"NOVA LIMA",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0052-88",lat:-19.9847,lon:-43.8514},
+  {id:253,n:"JUIZ DE FORA II",addr:"AV. DEUSDEDITH SALGADO, 4895 - TEIXEIRAS, JUIZ DE FORA - MG, 36033-000",city:"JUIZ DE FORA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0053-69",lat:-21.755,lon:-43.3503},
+  {id:254,n:"JOÃO PINHEIRO",addr:"AV. MÁRIO JOSÉ DA SILVEIRA, 1151 - DIVINÓPOLIS, JOÃO PINHEIRO - MG, 38770-000",city:"JOÃO PINHEIRO",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0054-40",lat:-17.7419,lon:-46.1722},
+  {id:255,n:"LEOPOLDINA",addr:"R. CARMITA MONTEIRO, 400 - 36700-000 - ALTO DO CEMITERIO, LEOPOLDINA - MG, 36704-182",city:"LEOPOLDINA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0055-20",lat:-21.5311,lon:-42.6414},
+  {id:256,n:"CARATINGA",addr:"AV. PROF. ARMANDO ALVES DA SILVA - ZACARIAS, CARATINGA - MG, 35302-403",city:"CARATINGA",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0056-01",lat:-19.7903,lon:-42.1486},
+  {id:257,n:"CONGONHAS",addr:"R. SARDENHA, 315 - JARDIM VILA ANDREZA, CONGONHAS - MG, 36410-264",city:"CONGONHAS",r:"REGIONAL 6",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0057-92",lat:-20.5022,lon:-43.8597},
+  {id:258,n:"TRÊS PONTAS",addr:"AVENIDA PREFEITO AVENIDA PREFEITO, AV. NILSON JOSÉ VILÉLA, 350 - ESPERANÇA, TRÊS PONTAS - MG, 37190-000",city:"TRÊS PONTAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0058-73",lat:-21.3664,lon:-45.5139},
+  {id:259,n:"MONTES CLAROS II",addr:"AV. INDEPENDÊNCIA, 2222 - MONTE CARMELO, MONTES CLAROS - MG, 39404-286",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0059-54",lat:-16.7253,lon:-43.8628},
+  {id:260,n:"MONTES CLAROS III",addr:"AV. COMENDADOR ANTONIO LOUREIRO RAMOS, 88 - DISTRITO INDUSTRIAL, MONTES CLAROS - MG",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0060-98",lat:-16.7153,lon:-43.8628},
+  {id:261,n:"VESPASIANO",addr:"R. MANOEL BERTOLDO FAGUNDES, 150 - LOJA 55 - FAGUNDES, VESPASIANO - MG, 33200-702",city:"VESPASIANO",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0061-79",lat:-19.6903,lon:-44.0514},
+  {id:262,n:"BETIM 1",addr:"AV. EDMEIA MATOS LAZZAROTTI, 3152 - INGÁ, BETIM - MG, 32604-446",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0062-50",lat:-19.9669,lon:-44.1989},
+  {id:263,n:"LINHA VERDE BH",addr:"ROD. PAPA JOÃO PAULO II, 1990 - JAQUELINE, BELO HORIZONTE - MG, 31748-042",city:"BELO HORIZONTE",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0063-30",lat:-19.8967,lon:-43.9345},
+  {id:264,n:"EXTREMA",addr:"EST. MUN. BENEDITA AP DE LIMA - EXTREMA, MG, 37640-000",city:"EXTREMA",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0064-11",lat:-22.8561,lon:-46.3175},
+  {id:265,n:"UBERABA III",addr:"R. MARIA BÁRBARA SOUZA, 975 - OLINDA, UBERABA - MG, 38055-690",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0065-00",lat:-19.7286,lon:-47.9317},
+  {id:267,n:"CURVELO",addr:"AVENIDA DOUTOR DALTON MOREIRA CANABRAVA, 860 - BELA VISTA, CURVELO - MG, 35796-219",city:"CURVELO",r:"REGIONAL 8",meso:"CENTRAL MINEIRA",cnpj:"04.737.552/0067-64",lat:-18.7564,lon:-44.43},
+  {id:269,n:"CD",addr:"AV. GERALDO ROCHA, 800 - CHÁCARA COTIA, CONTAGEM - MG, 32183-054",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0069-26",lat:-19.9317,lon:-44.0436},
+  {id:271,n:"BETIM II",addr:"VIA DE ACESSO A VIA EXPRESSA, 13300 - VILA CRISTINA, BETIM - MG",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0071-40",lat:-19.9569,lon:-44.1989},
+  {id:272,n:"PIRAPORA",addr:"AV. JEFFERSON GITIRANA, 905-823 - SANTOS DUMONT, PIRAPORA - MG, 39270-000",city:"PIRAPORA",r:"REGIONAL 4",meso:"NORTE DE MINAS",cnpj:"04.737.552/0072-21",lat:-17.3431,lon:-44.9442},
+  {id:273,n:"BARREIRO",addr:"AVENIDA AFONSO VAZ DE MELO, 1795, DIAMANTE, BELO HORIZONTE - MG, 30.640-070",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0073-02",lat:-19.8867,lon:-43.9345},
+  {id:274,n:"JANUARIA",addr:"AV. MAL. DEODORO DA FONSECA, 1015 - SÃO MIGUEL, JANUÁRIA - MG, 39480-000",city:"JANUÁRIA",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0074-93",lat:-15.4889,lon:-44.3617},
+  {id:276,n:"IBIRITÉ",addr:"RODOVIA RENATO BRANDÃO AZEREDO, Nº 780 - PIRATININGA, IBIRITÉ - MG, 32.423-535",city:"IBIRITÉ",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0076-55",lat:-20.0244,lon:-44.0583},
+  {id:277,n:"SABARA",addr:"AV. JOSÉ CÂNDIDO DA SILVEIRA, 2996 - ANA LÚCIA, SABARÁ - MG, 34710-138",city:"CAETÉ",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0077-36",lat:-19.8856,lon:-43.6664},
+  {id:278,n:"RIBEIRÃO DAS NEVES",addr:"AV. IVO GOMES DE ABREU, 101 - PORTO SEGURO, RIBEIRÃO DAS NEVES - MG, 33863-001",city:"RIBEIRÃO DAS NEVES",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0078-17",lat:-19.7678,lon:-44.0839},
+  {id:279,n:"LAGOA SANTA",addr:"AV. PREF. JOÃO DAHER, 787 - VILA PINTO COELHO, LAGOA SANTA - MG, 33400-000",city:"LAGOA SANTA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0079-06",lat:-19.6294,lon:-43.8989},
+  {id:280,n:"PEDRO LEOPOLDO",addr:"R. FERNANDO GONÇALVES DA SILVA, 130 - NOVO CAMPINHO, PEDRO LEOPOLDO - MG, 33254-106",city:"PEDRO LEOPOLDO",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0080-31",lat:-19.6161,lon:-44.0392},
+  {id:281,n:"CAETE",addr:"AV. DOUTOR JOÃO PINHEIRO, 4845, CENTRO - CAETÉ - MG, 34800-000",city:"SABARÁ",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0081-12",lat:-19.8883,lon:-43.8081},
+  {id:283,n:"SILVA LOBO",addr:"AV. SILVA LOBO, 900 - NOVA SUÍÇA, BELO HORIZONTE - MG, 30460-000",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0083-84",lat:-19.9167,lon:-43.9245},
+  {id:284,n:"SETE LAGOAS II",addr:"AV. PREF. ALBERTO MOURA, 1260 - DISTRITO INDUSTRIAL, SETE LAGOAS - MG, 35702-383",city:"SETE LAGOAS",r:"REGIONAL 8",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0084-65",lat:-19.4578,lon:-44.2469},
+  {id:285,n:"BETIM III",addr:"AV. JUIZ MARCO TÚLIO ISAAC, 10 - 293 - LARANJEIRAS, BETIM - MG, 32676-435",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0085-46",lat:-19.9469,lon:-44.1989},
+  {id:286,n:"FLORAMAR",addr:"AV. CRISTIANO MACHADO, 10.732 - FLORAMAR, BELO HORIZONTE - MG, 31260-500",city:"BELO HORIZONTE",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0086-27",lat:-19.9067,lon:-43.9245},
+  {id:287,n:"BETIM IV",addr:"AV. EDMEIA MATOS LAZZAROTTI, 4455 - SRA. DAS GRAÇAS, BETIM - MG, 32630-080",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0087-08",lat:-19.9369,lon:-44.1989},
+  {id:288,n:"SANTA LUZIA II",addr:"R. JOSÉ TÓFANI, 35 - SÃO JOÃO BATISTA, SANTA LUZIA - MG, 33030-005",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0088-99",lat:-19.7603,lon:-43.8517},
+  {id:289,n:"SANTA LUZIA III",addr:"AV. BRASÍLIA, 3470 - SÃO BENEDITO, SANTA LUZIA - MG, 33110-190",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0089-70",lat:-19.7503,lon:-43.8517},
+  {id:11,n:"RMMG",addr:"AV. GERALDO ROCHA, 800 - CHÁCARA COTIA, CONTAGEM - MG, 32183-054",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"55.872.858/0001-38",lat:-19.9217,lon:-44.0436}
+];
+
+// ── MAPA ─────────────────────────────────────────────────────────────────────
+const map = L.map('map',{center:[-18.5,-44.8],zoom:7,zoomControl:true});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+// ── CAMADAS ──────────────────────────────────────────────────────────────────
+let estadoLayer = L.layerGroup().addTo(map);
+let lojasLayer  = L.layerGroup().addTo(map);
+
+// ── 1. LIMITE ESTADUAL MG ─────────────────────────────────────────────────────
+fetch('https://raw.githubusercontent.com/giuliano-macedo/geodata-br-states/main/geojson/br_states/br_mg.json')
+  .then(r => r.json())
+  .then(geojsonMG => {
+    var mg = L.geoJSON(geojsonMG, {
+      style: { color:'#000000', weight:2.5, fillColor:'transparent', fillOpacity:0 }
+    });
+    estadoLayer.addLayer(mg);
+    map.fitBounds(mg.getBounds());
+  });
+
+
+// ── 3. MARKERS LOJAS (geocoding via Nominatim) ───────────────────────────────
+const storeMarkers = [];
+const CACHE_KEY = 'lojas_mg_geocache_v4';
+
+function makeIcon(col){
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:12px;height:12px;border-radius:50%;background:${col};border:2.5px solid rgba(255,255,255,.88);box-shadow:0 2px 8px rgba(0,0,0,.6);cursor:pointer"></div>`,
+    iconAnchor:[6,6], iconSize:[12,12]
+  });
+}
+
+function makePopup(s, col){
+  return `<div style="min-width:220px;max-width:280px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
+      <span style="font-size:13px;font-weight:800;color:#0d2d4e">Loja ${s.id} — ${s.n}</span>
+    </div>
+    <div style="height:1px;background:#e2eaf2;margin-bottom:8px"></div>
+    <table style="font-size:11px;border-collapse:collapse;width:100%">
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Filial</td><td style="color:#0d2d4e;font-weight:700;padding:3px 0 3px 10px">${s.n}</td></tr>
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Cidade</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.city}</td></tr>
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Regional</td><td style="color:${col};font-weight:700;padding:3px 0 3px 10px">${s.r}</td></tr>
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Mesorregião</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.meso}</td></tr>
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">CNPJ</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.cnpj}</td></tr>
+      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap;vertical-align:top">Endereço</td><td style="color:#334155;font-weight:500;padding:3px 0 3px 10px;line-height:1.4">${s.addr}</td></tr>
+    </table>
+  </div>`;
+}
+
+function placeMarker(s, lat, lon){
+  const col = COLORS[s.r] || '#888';
+  const mk = L.marker([lat, lon], {icon: makeIcon(col), zIndexOffset:500});
+  mk.storeData = s;
+  mk.bindPopup(makePopup(s, col), {maxWidth:300});
+  lojasLayer.addLayer(mk);
+  storeMarkers.push(mk);
+}
+
+// Status bar
+const statusEl = document.createElement('div');
+statusEl.style.cssText='position:absolute;bottom:36px;right:14px;background:rgba(255,255,255,.95);border:1px solid #d1dce8;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:#334155;z-index:400;box-shadow:0 2px 8px rgba(15,50,100,.1)';
+document.getElementById('map').appendChild(statusEl);
+
+// Load cache
+let cache = {};
+try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e){}
+
+// Separate cached vs needs geocoding
+const needsGeocode = [];
+STORES.forEach(s => {
+  if(cache[s.id]){
+    placeMarker(s, cache[s.id][0], cache[s.id][1]);
+  } else {
+    needsGeocode.push(s);
+  }
+});
+
+if(needsGeocode.length === 0){
+  statusEl.style.display='none';
+} else {
+  let idx = 0;
+  let done = STORES.length - needsGeocode.length;
+
+  statusEl.textContent = `Geocodificando lojas: ${done}/${STORES.length}`;
+
+  function geocodeNext(){
+    if(idx >= needsGeocode.length){
+      try{ localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }catch(e){}
+      statusEl.textContent = `✓ ${STORES.length} lojas posicionadas`;
+      setTimeout(()=>{ statusEl.style.display='none'; }, 3000);
+      return;
+    }
+    const s = needsGeocode[idx++];
+    // Use just street + city for better results
+    const q = encodeURIComponent(s.addr + ', Brasil');
+    const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=br`;
+
+    fetch(url, {headers:{'User-Agent':'lojas-mg-map/1.0 (educational)'}})
+      .then(r => r.json())
+      .then(data => {
+        let lat, lon;
+        if(data && data.length > 0){
+          lat = parseFloat(data[0].lat);
+          lon = parseFloat(data[0].lon);
+        } else {
+          // fallback to city coords already in STORES
+          lat = s.lat; lon = s.lon;
+        }
+        cache[s.id] = [lat, lon];
+        placeMarker(s, lat, lon);
+        done++;
+        statusEl.textContent = `Geocodificando lojas: ${done}/${STORES.length}`;
+        setTimeout(geocodeNext, 1100); // ~1 req/sec (Nominatim limit)
+      })
+      .catch(() => {
+        // On error use fallback coords
+        cache[s.id] = [s.lat, s.lon];
+        placeMarker(s, s.lat, s.lon);
+        done++;
+        setTimeout(geocodeNext, 1100);
+      });
+  }
+
+  geocodeNext();
+}
+
+
+// ── FILTRO ────────────────────────────────────────────────────────────────────
+let selReg='', selMeso='';
+const regC={}, mesoC={};
+STORES.forEach(s=>{ regC[s.r]=(regC[s.r]||0)+1; mesoC[s.meso]=(mesoC[s.meso]||0)+1; });
+
+const sReg = document.getElementById('sel-reg');
+const sMeso = document.getElementById('sel-meso');
+
+Object.keys(COLORS).forEach(r=>{
+  if(!regC[r]) return;
+  const o=document.createElement('option'); o.value=r;
+  o.textContent=`${r}  (${regC[r]} lojas)`; sReg.appendChild(o);
+});
+Object.keys(mesoC).sort().forEach(m=>{
+  const o=document.createElement('option'); o.value=m;
+  o.textContent=`${m}  (${mesoC[m]})`; sMeso.appendChild(o);
+});
+
+document.getElementById('kn').textContent = STORES.length;
+
+function applyFilter(){
+  let vis=0;
+  storeMarkers.forEach(mk=>{
+    const s=mk.storeData;
+    const show=(!selReg||s.r===selReg)&&(!selMeso||s.meso===selMeso);
+    const el=mk.getElement();
+    if(el){ el.style.opacity=show?'1':'0.05'; el.style.pointerEvents=show?'auto':'none'; }
+    if(show) vis++;
+  });
+  document.getElementById('kn').textContent=vis;
+  document.getElementById('cbtn').classList.toggle('on',!!(selReg||selMeso));
+  document.querySelectorAll('.lr').forEach(r=>r.classList.toggle('hl',!!selReg&&r.dataset.r===selReg));
+}
+
+sReg.onchange=()=>{ selReg=sReg.value; document.getElementById('sw-reg').classList.toggle('active',!!selReg); applyFilter(); };
+sMeso.onchange=()=>{ selMeso=sMeso.value; document.getElementById('sw-meso').classList.toggle('active',!!selMeso); applyFilter(); };
+document.getElementById('cbtn').onclick=()=>{
+  selReg=''; selMeso=''; sReg.value=''; sMeso.value='';
+  ['sw-reg','sw-meso'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  applyFilter();
+};
+
+// ── LEGENDA ───────────────────────────────────────────────────────────────────
+const legRows=document.getElementById('leg-rows');
+Object.keys(COLORS).forEach(r=>{
+  if(!regC[r]) return;
+  const row=document.createElement('div');
+  row.className='lr'; row.dataset.r=r;
+  row.innerHTML=`<div class="ld" style="background:${COLORS[r]}"></div><span class="ln">${r}</span><span class="lc">${regC[r]}</span>`;
+  row.onclick=()=>{
+    if(selReg===r){selReg='';sReg.value='';document.getElementById('sw-reg').classList.remove('active');}
+    else{selReg=r;sReg.value=r;document.getElementById('sw-reg').classList.add('active');}
+    applyFilter();
+  };
+  legRows.appendChild(row);
+});
+
+// ── TOGGLES ───────────────────────────────────────────────────────────────────
+
+} // end init
+init();
+}); // end loadScript
+</script>
+</body>
+</html>
+
