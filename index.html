@@ -2,424 +2,626 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mapa de Lojas — Minas Gerais</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mapa de Chamados · Mart Minas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;overflow:hidden;background:#f0f4f8}
-#app{display:flex;flex-direction:column;height:100vh}
-
-#top{
-  background:#fff;border-bottom:1px solid #d1dce8;
-  padding:0 18px;height:52px;display:flex;align-items:center;gap:14px;
-  flex-shrink:0;z-index:500;position:relative;
-  box-shadow:0 2px 12px rgba(15,50,100,.08)
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f0ede8;--surface:#fff;--surface2:#f7f5f2;--surface3:#edeae5;
+  --border:#e0dcd6;--border2:#ccc8c0;
+  --text:#18160f;--text2:#56524a;--text3:#9e9a90;
+  --shadow:rgba(24,22,15,.07);--shadow2:rgba(24,22,15,.16);
+  --accent:#18160f;
 }
-.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.logo-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
-.logo-text{font-size:13px;font-weight:800;color:#0d2d4e;line-height:1.2}
-.logo-text small{display:block;font-size:9px;font-weight:500;color:#64748b;letter-spacing:.3px}
-.vsep{width:1px;height:26px;background:#e2eaf2;flex-shrink:0}
+html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:13px}
 
-.fg{display:flex;flex-direction:column;gap:2px}
-.fl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8}
-.sw{position:relative}
-.sw select{
-  appearance:none;background:#f5f8fc;border:1.5px solid #cbd5e1;
-  color:#1e3a5f;font-size:12px;font-weight:600;font-family:inherit;
-  padding:5px 28px 5px 10px;border-radius:7px;cursor:pointer;outline:none;
-  transition:all .18s;min-width:178px
-}
-.sw select:hover{border-color:#3b82f6}
-.sw select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
-.sw.active select{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
-.arr{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:#94a3b8;font-size:9px}
+/* ── TOPBAR ── */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:1000;height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;box-shadow:0 2px 12px var(--shadow);}
+.tb-brand{display:flex;align-items:center;gap:10px;padding:0 18px;border-right:1px solid var(--border);height:100%;min-width:180px;flex-shrink:0;}
+.tb-logo{width:30px;height:30px;border-radius:7px;flex-shrink:0;background:#18160f;display:flex;align-items:center;justify-content:center;}
+.tb-logo svg{width:16px;height:16px;fill:#fff}
+.tb-brand-name{font-weight:700;font-size:13px;letter-spacing:-.2px;line-height:1.2}
+.tb-brand-sub{font-size:10px;color:var(--text3)}
+.tb-filters{display:flex;align-items:center;gap:6px;padding:0 14px;flex:1;overflow:hidden}
+.tb-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
+.tb-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;flex-shrink:0}
+.tb-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 24px 5px 9px;border-radius:6px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:500;outline:none;cursor:pointer;flex-shrink:0;appearance:none;-webkit-appearance:none;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%239e9a90'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;max-width:155px;}
+.tb-select:hover,.tb-select:focus{border-color:var(--text)}
+.tb-select:disabled{opacity:.4;cursor:not-allowed}
+.tb-btn{background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:"DM Sans",sans-serif;transition:all .15s;flex-shrink:0;}
+.tb-btn:hover{border-color:#e63946;color:#e63946;background:rgba(230,57,70,.04)}
+.tb-btn:disabled{opacity:.4;cursor:not-allowed}
+.tb-kpis{display:flex;align-items:stretch;border-left:1px solid var(--border);height:100%;flex-shrink:0}
+.tb-kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 14px;border-right:1px solid var(--border);min-width:76px;}
+.tb-kpi-val{font-size:17px;font-weight:700;line-height:1;font-family:"DM Mono",monospace;letter-spacing:-.5px}
+.tb-kpi-lbl{font-size:8px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
 
-.kpis{display:flex;gap:6px;margin-left:auto}
-.kpi{background:#f5f8fc;border:1px solid #dde6f0;padding:3px 14px;border-radius:7px;text-align:center}
-.kpi b{display:block;font-size:17px;font-weight:800;color:#0d2d4e;line-height:1.15}
-.kpi small{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-top:1px}
+/* ── UPLOAD OVERLAY ── */
+#upload-overlay{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.upload-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:48px 56px;box-shadow:0 8px 40px var(--shadow2);text-align:center;max-width:480px;width:90%;}
+.upload-logo{width:56px;height:56px;background:#18160f;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+.upload-logo svg{width:28px;height:28px;fill:#fff}
+.upload-title{font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+.upload-sub{font-size:13px;color:var(--text3);margin-bottom:32px;line-height:1.5}
+.upload-drop{border:2px dashed var(--border2);border-radius:12px;padding:32px 24px;cursor:pointer;transition:all .2s;margin-bottom:16px;position:relative;}
+.upload-drop:hover,.upload-drop.dragover{border-color:var(--accent);background:var(--surface2)}
+.upload-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-drop-icon{font-size:28px;margin-bottom:12px}
+.upload-drop-text{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.upload-drop-hint{font-size:11px;color:var(--text3)}
+.upload-status{font-size:12px;color:var(--text3);min-height:20px;margin-top:8px;}
+.upload-status.error{color:#e63946}
+.upload-status.success{color:#00a372}
 
-#cbtn{
-  display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;
-  border:1.5px solid #e2eaf2;background:#f5f8fc;color:#94a3b8;
-  font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;font-family:inherit;flex-shrink:0
-}
-#cbtn:hover,#cbtn.on{border-color:#e94560;color:#e94560;background:#fff5f6}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:12px;display:none}
+.progress-fill{height:100%;background:#18160f;width:0%;transition:width .3s;border-radius:2px}
 
-#map{flex:1;z-index:1}
+/* ── MAP ── */
+#map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1}
 
-#legend{
-  position:absolute;top:64px;right:14px;
-  background:rgba(255,255,255,.97);border:1px solid #d1dce8;border-radius:12px;
-  padding:12px 14px;z-index:400;box-shadow:0 4px 20px rgba(15,50,100,.10);min-width:158px
-}
-#legend h4{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #f0f4f8}
-.lr{display:flex;align-items:center;gap:7px;font-size:11px;margin-bottom:4px;padding:3px 6px;border-radius:5px;cursor:pointer;transition:background .12s}
-.lr:hover{background:#f5f8fc}
-.lr.hl{background:#eff6ff}
-.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.18)}
-.ln{flex:1;font-weight:500;color:#334155}
-.lc{font-size:10px;font-weight:700;color:#94a3b8;background:#f0f4f8;padding:1px 6px;border-radius:6px}
+/* ── LEGEND ── */
+.legend{position:fixed;bottom:20px;right:14px;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px 14px;box-shadow:0 4px 20px var(--shadow2);min-width:168px;}
+.legend-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:7px;padding:3px 5px;border-radius:5px;cursor:pointer;transition:background .12s;margin-bottom:1px;user-select:none;}
+.legend-item:hover{background:var(--surface2)}
+.legend-item.active{background:var(--surface2)}
+.legend-item.dimmed{opacity:.3}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.legend-label{font-size:11px;font-weight:500;color:var(--text)}
+.legend-count{font-size:9px;color:var(--text3);margin-left:auto;font-family:"DM Mono",monospace}
 
+/* ── POPUP ── */
+.leaflet-popup-content-wrapper{border-radius:12px!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px var(--shadow2)!important;padding:0!important;overflow:hidden}
+.leaflet-popup-content{margin:0!important;width:300px!important}
+.leaflet-popup-tip-container{margin-top:-1px}
+.pu-head{padding:11px 14px 9px;border-bottom:1px solid var(--border)}
+.pu-id{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+.pu-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.25;margin:2px 0}
+.pu-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.pu-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;color:#fff}
+.pu-badge2{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.pu-info{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px}
+.pu-info-item{flex:1}
+.pu-info-lbl{font-size:8px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.pu-info-val{font-size:11px;color:var(--text2)}
+.pu-cells{padding:10px 14px 10px}
+.pu-cells-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px}
+.pu-cell-row{margin-bottom:8px}
+.pu-cell-row:last-child{margin-bottom:0}
+.pu-cell-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.pu-cell-name{font-size:10px;font-weight:700}
+.pu-cell-nums{display:flex;gap:5px}
+.pu-cell-num{font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px}
+.cn-t{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.cn-a{background:rgba(59,107,255,.1);color:#3b6bff}
+.cn-e{background:rgba(0,180,120,.1);color:#00a372}
+.cn-c{background:rgba(160,155,145,.15);color:var(--text3)}
+.pu-bar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;display:flex}
+.pu-bar-a{height:100%;background:#3b6bff}
+.pu-bar-e{height:100%;background:#00c48c}
+.pu-bar-c{height:100%;background:var(--border2)}
+.pu-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 14px 8px;background:var(--surface2);border-top:1px solid var(--border)}
+.pu-foot-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3)}
+.pu-foot-val{font-size:15px;font-weight:700;font-family:"DM Mono",monospace}
 
-
-.leaflet-control-zoom{border:none!important;border-radius:9px!important;overflow:hidden;box-shadow:0 2px 10px rgba(15,50,100,.15)!important}
-.leaflet-control-zoom a{background:#fff!important;color:#334155!important;border-color:#d1dce8!important;width:30px!important;height:30px!important;line-height:30px!important}
-.leaflet-control-zoom a:hover{background:#f5f8fc!important}
-.leaflet-popup-content-wrapper{background:#fff;border:1px solid #d1dce8;border-radius:12px;box-shadow:0 8px 30px rgba(15,50,100,.15);color:#334155}
-.leaflet-popup-tip{background:#fff}
-.leaflet-popup-content{margin:12px 15px}
-.leaflet-control-attribution{background:rgba(255,255,255,.8)!important;color:#94a3b8!important;font-size:9px!important}
-.leaflet-control-attribution a{color:#64748b!important}
+/* ── PIN ── */
+.pin{border-radius:50%;border:2.5px solid #fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.pin:hover{transform:scale(1.3)!important}
+.pin span{font-size:7.5px;font-weight:700;color:#fff;font-family:"DM Mono",monospace;line-height:1;pointer-events:none}
+.leaflet-control-attribution{font-size:8px!important}
+.meso-tip{background:#fff;border:1px solid var(--border,#e0dcd6);border-radius:7px;padding:5px 10px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.1);pointer-events:none}
 </style>
 </head>
 <body>
-<div id="app">
 
-<div id="top">
-  <div class="logo">
-    <div class="logo-icon">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+<!-- UPLOAD OVERLAY -->
+<div id="upload-overlay">
+  <div class="upload-card">
+    <div class="upload-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
     </div>
-    <div class="logo-text">Lojas Minas Gerais <small>Leaflet · GeoJSON IBGE · Limite + Mesorregiões</small></div>
-  </div>
-  <div class="vsep"></div>
-  <div class="fg">
-    <span class="fl">Regional</span>
-    <div class="sw" id="sw-reg">
-      <select id="sel-reg"><option value="">Todas as Regionais</option></select>
-      <span class="arr">▾</span>
+    <div class="upload-title">Mapa de Chamados</div>
+    <div class="upload-sub">Faça o upload da planilha <strong>ANALISE_CONECTA.xlsm</strong> para carregar o mapa com os dados atualizados.</div>
+
+    <div class="upload-drop" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls">
+      <div class="upload-drop-icon">📂</div>
+      <div class="upload-drop-text">Clique ou arraste a planilha aqui</div>
+      <div class="upload-drop-hint">.xlsx · .xlsm · .xls</div>
     </div>
-  </div>
-  <div class="fg">
-    <span class="fl">Mesorregião</span>
-    <div class="sw" id="sw-meso">
-      <select id="sel-meso"><option value="">Todas as Mesorregiões</option></select>
-      <span class="arr">▾</span>
+
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
     </div>
+    <div class="upload-status" id="upload-status">Aguardando arquivo...</div>
   </div>
-  <button id="cbtn">
-    <svg width="9" height="9" viewBox="0 0 10 10" stroke="currentColor" stroke-width="2.2"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
-    Limpar
-  </button>
-  <div class="kpis">
-    <div class="kpi"><b id="kn">82</b><small>Lojas</small></div>
-    <div class="kpi"><b>9</b><small>Regionais</small></div>
-    <div class="kpi"><b>11</b><small>Mesos</small></div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+    <div><div class="tb-brand-name">Mapa de Chamados</div><div class="tb-brand-sub">Desenvolvido por Wendell França</div></div>
+  </div>
+  <div class="tb-filters">
+    <span class="tb-label">Regional</span>
+    <select class="tb-select" id="f-reg" onchange="applyFilters()" disabled><option value="">Todas</option></select>
+    <span class="tb-label">Mesorregião</span>
+    <select class="tb-select" id="f-meso" onchange="applyFilters()" disabled><option value="">Todas</option></select>
+    <div class="tb-sep"></div>
+    <span class="tb-label">Célula</span>
+    <select class="tb-select" id="f-cel" onchange="applyFilters()" disabled>
+      <option value="">Todas</option>
+      <option value="CELULA 01">Célula 01</option>
+      <option value="CELULA 02">Célula 02</option>
+      <option value="CELULA 03">Célula 03</option>
+      <option value="CELULA 04">Célula 04</option>
+    </select>
+    <span class="tb-label">Matéria</span>
+    <select class="tb-select" id="f-grp" onchange="applyFilters()" disabled>
+      <option value="">Todas</option>
+      <option>AGUA</option><option>CARRINHOS</option><option>CIVIL</option>
+      <option>CLIMATIZACAO</option><option>ELETRICA</option><option>EMPILHADEIRA</option>
+      <option>GAS</option><option>GERADOR</option><option>HIDRAULICA</option>
+      <option>INCENDIO</option><option>MAQUINAS</option><option>MOVEIS</option>
+      <option>PRAGAS</option><option>REFRIGERACAO</option><option>SERRALHERIA</option>
+      <option>SUPRIMENTOS</option>
+    </select>
+    <span class="tb-label">Status</span>
+    <select class="tb-select" id="f-stat" onchange="applyFilters()" disabled>
+      <option value="">Todos</option>
+      <option value="ABERTOS">Abertos</option>
+      <option value="ENCERRADOS">Encerrados</option>
+      <option value="CANCELADO">Cancelado</option>
+    </select>
+    <span class="tb-label">Ano</span>
+    <select class="tb-select" id="f-ano" onchange="applyFilters()" disabled>
+      <option value="">Todos</option>
+      <option value="2025">2025</option>
+      <option value="2026">2026</option>
+    </select>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="resetFilters()" disabled id="btn-limpar">✕ Limpar</button>
+    <button class="tb-btn" onclick="openUpload()" style="margin-left:4px">↑ Atualizar planilha</button>
+  </div>
+  <div class="tb-kpis">
+    <div class="tb-kpi"><div class="tb-kpi-val" id="kv-lojas">—</div><div class="tb-kpi-lbl">Lojas</div></div>
+    <div class="tb-kpi"><div class="tb-kpi-val" id="kv-cham">—</div><div class="tb-kpi-lbl">Chamados</div></div>
+    <div class="tb-kpi"><div class="tb-kpi-val" id="kv-ab">—</div><div class="tb-kpi-lbl">Abertos</div></div>
   </div>
 </div>
 
 <div id="map"></div>
 
-<div id="legend">
-  <h4>Regionais</h4>
-  <div id="leg-rows"></div>
-</div>
-
-
-
+<div class="legend" id="legend-box">
+  <div class="legend-title">Regionais</div>
+  <div id="leg-reg"></div>
 </div>
 
 <script>
-function loadScript(src, cb){
-  var s = document.createElement('script');
-  s.src = src;
-  s.onload = cb;
-  s.onerror = function(){ console.error('Failed to load', src); };
-  document.head.appendChild(s);
+// ── LOOKUP TABLES (embedded from BASE sheet) ──
+const STATUS_MAP = {"FECHADO":"ENCERRADOS","PENDENTE FORNECEDOR":"ABERTOS","RESPONDIDO PELO USUÁRIO":"ABERTOS","CANCELADO":"CANCELADO","EM ESPERA":"ABERTOS","RESOLVIDO":"ENCERRADOS","ANÁLISE AGENDADA":"ABERTOS","ABERTO":"ABERTOS","EM ANÁLISE":"ABERTOS","PENDENTE USUÁRIO":"ABERTOS","ARQUIVADO":"ENCERRADOS"};
+
+const GRUPO_MAP = {"MANUT_Gerador":{"m":"GERADOR","c":"CELULA 03"},"MANUT_Serralheria":{"m":"SERRALHERIA","c":"CELULA 02"},"MANUT_Elétrica":{"m":"ELETRICA","c":"CELULA 03"},"MANUT_Refrigeração":{"m":"REFRIGERACAO","c":"CELULA 01"},"MANUT_Incêndio":{"m":"INCENDIO","c":"CELULA 04"},"MANUT_Maquinas e equipamentos":{"m":"MAQUINAS","c":"CELULA 03"},"MANUT_Civil":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Móveis":{"m":"MOVEIS","c":"CELULA 02"},"MANUT_Climatização":{"m":"CLIMATIZACAO","c":"CELULA 01"},"MANUT_Energia elétrica":{"m":"ENERGIA","c":"-"},"MANUT_Hidraulica":{"m":"HIDRAULICA","c":"CELULA 04"},"MANUT-PRESTADOR_empilhadeira":{"m":"EMPILHADEIRA","c":"CELULA 02"},"MANUT_Empilhadeira":{"m":"EMPILHADEIRA","c":"CELULA 02"},"MANUT_Ar condicionado":{"m":"CLIMATIZACAO","c":"CELULA 01"},"MANUT_Estrutura madeira":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Blindex":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Estrutura metálica":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Jardinagem":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Som":{"m":"MAQUINAS","c":"CELULA 03"},"MANUT_Consumo de água fria":{"m":"AGUA","c":"-"},"MANUT_Carrinhos / escadas":{"m":"CARRINHOS","c":"CELULA 03"},"MANUT_Geral":{"m":"SUPRIMENTOS","c":"-"},"MANUT_Elevador":{"m":"CIVIL","c":"CELULA 04"},"MANUT_Sistemas de lavagem de estacionamento":{"m":"HIDRAULICA","c":"CELULA 04"},"MANUT_Consumo gás":{"m":"GAS","c":"-"},"MANUT_Consumo energia eletrica":{"m":"ENERGIA","c":"-"},"MANUT_Meio ambiente":{"m":"PRAGAS","c":"CELULA 04"},"MANUT-PRESTADOR_Carrinhos":{"m":"CARRINHOS","c":"CELULA 03"},"MANUT-PRESTADOR_Paleteira":{"m":"EMPILHADEIRA","c":"CELULA 02"},"MANUT-PRESTADOR_Gerador":{"m":"GERADOR","c":"CELULA 03"},"MANUT-PRESTADOR_Serralheria":{"m":"SERRALHERIA","c":"CELULA 02"},"MANUT_Suprimentos":{"m":"SUPRIMENTOS","c":"-"}};
+
+// Loja geodata (from BASE sheet — loja positions don't change with data updates)
+const LOJAS_GEO = [{"loja":"201","filial":"DIVINÓPOLIS","cidade":"DIVINÓPOLIS - MG","mesoregiao":"OESTE DE MINAS","regional":"REGIONAL 9","cnpj":"04.737.552/0001-38","lat":-19.8698,"lon":-44.0305},{"loja":"202","filial":"CONTAGEM","cidade":"CONTAGEM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0002-19","lat":-20.1584,"lon":-44.9119},{"loja":"203","filial":"ADM","cidade":"BELO HORIZONTE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0003-08","lat":-19.9592,"lon":-44.06},{"loja":"204","filial":"SANTA LUZIA","cidade":"SANTA LUZIA - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0004-80","lat":-19.9625,"lon":-43.9641},{"loja":"205","filial":"GOVERNADOR VALADARES","cidade":"GOV. VALADARES - MG","mesoregiao":"VALE DO RIO DOCE","regional":"REGIONAL 2","cnpj":"04.737.552/0005-61","lat":-18.8548,"lon":-41.9497},{"loja":"206","filial":"JUIZ DE FORA","cidade":"JUIZ DE FORA - MG","mesoregiao":"ZONA DA MATA","regional":"REGIONAL 6","cnpj":"04.737.552/0006-42","lat":-21.762,"lon":-43.345},{"loja":"207","filial":"UBERABA","cidade":"UBERABA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0007-23","lat":-19.748,"lon":-47.931},{"loja":"209","filial":"SETE LAGOAS","cidade":"SETE LAGOAS - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 8","cnpj":"04.737.552/0009-95","lat":-19.465,"lon":-44.247},{"loja":"210","filial":"UBERLÂNDIA","cidade":"UBERLÂNDIA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0010-29","lat":-18.912,"lon":-48.278},{"loja":"211","filial":"SÃO JOAQUIM","cidade":"CONTAGEM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0011-00","lat":-19.919,"lon":-44.124},{"loja":"212","filial":"CD HORTIFRUT","cidade":"CONTAGEM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0012-90","lat":-19.932,"lon":-44.055},{"loja":"213","filial":"PATOS DE MINAS","cidade":"PATOS DE MINAS - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 4","cnpj":"04.737.552/0013-71","lat":-18.578,"lon":-46.518},{"loja":"214","filial":"ITUIUTABA","cidade":"ITUIUTABA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0014-52","lat":-18.975,"lon":-49.469},{"loja":"215","filial":"ALFENAS","cidade":"ALFENAS - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0015-33","lat":-21.429,"lon":-45.947},{"loja":"216","filial":"POUSO ALEGRE","cidade":"POUSO ALEGRE - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0016-14","lat":-22.231,"lon":-45.936},{"loja":"217","filial":"SANTANA DO PARAÍSO","cidade":"SANTANA DO PARAÍSO - MG","mesoregiao":"VALE DO RIO DOCE","regional":"REGIONAL 2","cnpj":"04.737.552/0017-03","lat":-19.372,"lon":-42.536},{"loja":"218","filial":"ARAPORÃ","cidade":"ARAPORÃ - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0018-86","lat":-18.455,"lon":-49.219},{"loja":"219","filial":"MONTES CLAROS","cidade":"MONTES CLAROS - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 8","cnpj":"04.737.552/0019-67","lat":-16.72,"lon":-43.861},{"loja":"220","filial":"UBÁ","cidade":"UBÁ - MG","mesoregiao":"ZONA DA MATA","regional":"REGIONAL 6","cnpj":"04.737.552/0020-09","lat":-21.118,"lon":-42.971},{"loja":"221","filial":"ARAGUARI","cidade":"ARAGUARI - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0021-81","lat":-18.645,"lon":-48.188},{"loja":"222","filial":"UBERLÂNDIA II","cidade":"UBERLÂNDIA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0022-62","lat":-18.899,"lon":-48.236},{"loja":"223","filial":"UBERABA II","cidade":"UBERABA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0023-43","lat":-19.748,"lon":-47.931},{"loja":"224","filial":"PARACATU","cidade":"PARACATU - MG","mesoregiao":"NOROESTE DE MINAS","regional":"REGIONAL 4","cnpj":"04.737.552/0024-24","lat":-17.22,"lon":-46.874},{"loja":"225","filial":"PATROCÍNIO","cidade":"PATROCÍNIO - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 4","cnpj":"04.737.552/0025-05","lat":-18.943,"lon":-46.993},{"loja":"226","filial":"PARÁ DE MINAS","cidade":"PARÁ DE MINAS - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 9","cnpj":"04.737.552/0026-96","lat":-19.862,"lon":-44.603},{"loja":"227","filial":"TRÊS CORAÇÕES","cidade":"TRÊS CORAÇÕES - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0027-77","lat":-21.699,"lon":-45.255},{"loja":"228","filial":"ARAXÁ","cidade":"ARAXÁ - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 4","cnpj":"04.737.552/0028-58","lat":-19.592,"lon":-46.94},{"loja":"229","filial":"LAVRAS","cidade":"LAVRAS - MG","mesoregiao":"CAMPO DAS VERTENTES","regional":"REGIONAL 5","cnpj":"04.737.552/0029-39","lat":-21.245,"lon":-44.999},{"loja":"230","filial":"BARBACENA","cidade":"BARBACENA - MG","mesoregiao":"CAMPO DAS VERTENTES","regional":"REGIONAL 6","cnpj":"04.737.552/0030-72","lat":-21.226,"lon":-43.774},{"loja":"231","filial":"PASSOS","cidade":"PASSOS - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 9","cnpj":"04.737.552/0031-53","lat":-20.72,"lon":-46.609},{"loja":"232","filial":"ITAÚNA","cidade":"ITAÚNA - MG","mesoregiao":"OESTE DE MINAS","regional":"REGIONAL 9","cnpj":"04.737.552/0032-34","lat":-20.074,"lon":-44.576},{"loja":"233","filial":"TEÓFILO OTONI","cidade":"TEÓFILO OTONI - MG","mesoregiao":"VALE DO MUCURI","regional":"REGIONAL 2","cnpj":"04.737.552/0033-15","lat":-17.857,"lon":-41.506},{"loja":"234","filial":"CONSELHEIRO LAFAIETE","cidade":"CONSELHEIRO LAFAIETE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 6","cnpj":"04.737.552/0034-04","lat":-20.662,"lon":-43.789},{"loja":"235","filial":"DAVID SARNOFF","cidade":"CONTAGEM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0035-87","lat":-19.902,"lon":-44.078},{"loja":"236","filial":"VARGINHA","cidade":"VARGINHA - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0036-68","lat":-21.551,"lon":-45.43},{"loja":"237","filial":"DIVINÓPOLIS II","cidade":"DIVINÓPOLIS - MG","mesoregiao":"OESTE DE MINAS","regional":"REGIONAL 9","cnpj":"04.737.552/0037-49","lat":-20.158,"lon":-44.891},{"loja":"238","filial":"UBERLÂNDIA III","cidade":"UBERLÂNDIA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0038-20","lat":-18.892,"lon":-48.331},{"loja":"239","filial":"ITABIRA","cidade":"ITABIRA - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 2","cnpj":"04.737.552/0039-00","lat":-19.619,"lon":-43.228},{"loja":"240","filial":"UNAÍ","cidade":"UNAÍ - MG","mesoregiao":"NOROESTE DE MINAS","regional":"REGIONAL 4","cnpj":"04.737.552/0040-44","lat":-16.36,"lon":-46.902},{"loja":"241","filial":"SÃO JOÃO DEL REI","cidade":"SÃO JOÃO DEL REI - MG","mesoregiao":"CAMPO DAS VERTENTES","regional":"REGIONAL 6","cnpj":"04.737.552/0041-25","lat":-21.134,"lon":-44.264},{"loja":"242","filial":"POÇOS DE CALDAS","cidade":"POÇOS DE CALDAS - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0042-06","lat":-21.787,"lon":-46.561},{"loja":"244","filial":"JOÃO MONLEVADE","cidade":"JOÃO MONLEVADE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 2","cnpj":"04.737.552/0044-78","lat":-19.81,"lon":-43.173},{"loja":"245","filial":"PATOS DE MINAS II","cidade":"PATOS DE MINAS - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 4","cnpj":"04.737.552/0045-59","lat":-18.578,"lon":-46.518},{"loja":"246","filial":"UBERLÂNDIA IV","cidade":"UBERLÂNDIA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0046-30","lat":-18.935,"lon":-48.277},{"loja":"247","filial":"BOM DESPACHO","cidade":"BOM DESPACHO - MG","mesoregiao":"CENTRAL MINEIRA","regional":"REGIONAL 9","cnpj":"04.737.552/0047-10","lat":-19.724,"lon":-45.255},{"loja":"248","filial":"CAMPO BELO","cidade":"CAMPO BELO - MG","mesoregiao":"OESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0048-00","lat":-20.896,"lon":-45.275},{"loja":"249","filial":"MONTE CARMELO","cidade":"MONTE CARMELO - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 4","cnpj":"04.737.552/0049-82","lat":-18.729,"lon":-47.503},{"loja":"250","filial":"JANAÚBA","cidade":"JANAÚBA - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 8","cnpj":"04.737.552/0050-16","lat":-15.803,"lon":-43.308},{"loja":"251","filial":"SERRANO","cidade":"BELO HORIZONTE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0051-05","lat":-19.959,"lon":-43.956},{"loja":"252","filial":"NOVA LIMA","cidade":"NOVA LIMA - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0052-88","lat":-20.001,"lon":-43.851},{"loja":"253","filial":"JUIZ DE FORA II","cidade":"JUIZ DE FORA - MG","mesoregiao":"ZONA DA MATA","regional":"REGIONAL 6","cnpj":"04.737.552/0053-69","lat":-21.791,"lon":-43.35},{"loja":"254","filial":"JOÃO PINHEIRO","cidade":"JOÃO PINHEIRO - MG","mesoregiao":"NOROESTE DE MINAS","regional":"REGIONAL 4","cnpj":"04.737.552/0054-40","lat":-17.736,"lon":-46.173},{"loja":"255","filial":"LEOPOLDINA","cidade":"LEOPOLDINA - MG","mesoregiao":"ZONA DA MATA","regional":"REGIONAL 6","cnpj":"04.737.552/0055-20","lat":-21.532,"lon":-42.645},{"loja":"256","filial":"CARATINGA","cidade":"CARATINGA - MG","mesoregiao":"VALE DO RIO DOCE","regional":"REGIONAL 2","cnpj":"04.737.552/0056-01","lat":-19.78,"lon":-42.14},{"loja":"257","filial":"CONGONHAS","cidade":"CONGONHAS - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 6","cnpj":"04.737.552/0057-92","lat":-20.5,"lon":-43.856},{"loja":"258","filial":"TRÊS PONTAS","cidade":"TRÊS PONTAS - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0058-73","lat":-21.37,"lon":-45.508},{"loja":"259","filial":"MONTES CLAROS II","cidade":"MONTES CLAROS - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 8","cnpj":"04.737.552/0059-54","lat":-16.71,"lon":-43.862},{"loja":"260","filial":"MONTES CLAROS III","cidade":"MONTES CLAROS - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 8","cnpj":"04.737.552/0060-98","lat":-16.71,"lon":-43.836},{"loja":"261","filial":"VESPASIANO","cidade":"VESPASIANO - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0061-79","lat":-19.69,"lon":-43.972},{"loja":"262","filial":"BETIM","cidade":"BETIM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 9","cnpj":"04.737.552/0062-50","lat":-19.968,"lon":-44.198},{"loja":"263","filial":"LINHA VERDE","cidade":"BELO HORIZONTE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0063-30","lat":-19.87,"lon":-43.95},{"loja":"264","filial":"EXTREMA","cidade":"EXTREMA - MG","mesoregiao":"SUL E SUDOESTE DE MINAS","regional":"REGIONAL 5","cnpj":"04.737.552/0064-11","lat":-22.852,"lon":-46.316},{"loja":"265","filial":"UBERABA III","cidade":"UBERABA - MG","mesoregiao":"TRIÂNGULO MINEIRO E ALTO PARANAÍBA","regional":"REGIONAL 3","cnpj":"04.737.552/0065-00","lat":-19.748,"lon":-47.931},{"loja":"267","filial":"CURVELO","cidade":"CURVELO - MG","mesoregiao":"CENTRAL MINEIRA","regional":"REGIONAL 8","cnpj":"04.737.552/0067-64","lat":-18.756,"lon":-44.432},{"loja":"269","filial":"CD","cidade":"CONTAGEM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"55.872.858/0001-38","lat":-19.932,"lon":-44.054},{"loja":"271","filial":"BETIM II","cidade":"BETIM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 9","cnpj":"04.737.552/0071-40","lat":-19.968,"lon":-44.218},{"loja":"272","filial":"PIRAPORA","cidade":"PIRAPORA - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 4","cnpj":"04.737.552/0072-21","lat":-17.346,"lon":-44.942},{"loja":"273","filial":"BARREIRO","cidade":"BELO HORIZONTE - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0073-02","lat":-20.0,"lon":-44.049},{"loja":"274","filial":"JANUÁRIA","cidade":"JANUÁRIA - MG","mesoregiao":"NORTE DE MINAS","regional":"REGIONAL 8","cnpj":"04.737.552/0074-93","lat":-15.489,"lon":-44.362},{"loja":"277","filial":"SABARÁ","cidade":"SABARÁ - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0077-36","lat":-19.878,"lon":-43.808},{"loja":"278","filial":"RIBEIRÃO DAS NEVES","cidade":"RIBEIRÃO DAS NEVES - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 1","cnpj":"04.737.552/0078-17","lat":-19.758,"lon":-44.088},{"loja":"279","filial":"LAGOA SANTA","cidade":"LAGOA SANTA - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0079-06","lat":-19.632,"lon":-43.896},{"loja":"280","filial":"PEDRO LEOPOLDO","cidade":"PEDRO LEOPOLDO - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0080-31","lat":-19.619,"lon":-44.042},{"loja":"281","filial":"CAETÉ","cidade":"CAETÉ - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 2","cnpj":"04.737.552/0081-12","lat":-19.898,"lon":-43.666},{"loja":"284","filial":"SETE LAGOAS II","cidade":"SETE LAGOAS - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 8","cnpj":"04.737.552/0084-65","lat":-19.458,"lon":-44.248},{"loja":"285","filial":"BETIM III","cidade":"BETIM - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 9","cnpj":"04.737.552/0085-46","lat":-19.968,"lon":-44.218},{"loja":"288","filial":"SANTA LUZIA II","cidade":"SANTA LUZIA - MG","mesoregiao":"METROPOLITANA DE BELO HORIZONTE","regional":"REGIONAL 7","cnpj":"04.737.552/0088-99","lat":-19.772,"lon":-43.853}];
+
+// Build geo lookup by loja number
+const GEO = {};
+LOJAS_GEO.forEach(l => GEO[l.loja] = l);
+
+const RC = {'REGIONAL 1':'#E63946','REGIONAL 2':'#0288D1','REGIONAL 3':'#2A9D8F','REGIONAL 4':'#1565C0','REGIONAL 5':'#7B2FBE','REGIONAL 6':'#E8B800','REGIONAL 7':'#00897B','REGIONAL 8':'#FF8C00','REGIONAL 9':'#F06292'};
+const CC = {'CELULA 01':'#3b6bff','CELULA 02':'#9B5DE5','CELULA 03':'#F4A261','CELULA 04':'#E63946'};
+
+// ── MAP INIT ──
+const map = L.map('map',{center:[-18.5,-44.5],zoom:7,zoomControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+L.control.zoom({position:'topleft'}).addTo(map);
+
+// State border
+fetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/31?formato=application/vnd.geo+json')
+  .then(r=>r.json())
+  .then(g=>L.geoJSON(g,{style:{color:'#18160f',weight:1.5,opacity:.25,fillOpacity:0}}).addTo(map))
+  .catch(()=>{});
+
+// Mesorregião borders
+const mesoGeoCache = {};
+const mesoLayers   = {};
+
+function loadMesoBorders() {
+  fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/31/mesorregioes')
+    .then(r=>r.json())
+    .then(list=>{
+      list.forEach(m=>{
+        fetchAndDrawMeso(m.nome.toUpperCase(), m.id);
+      });
+    })
+    .catch(()=>{});
 }
 
-loadScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', function(){
-function init(){
-const COLORS={
-  "REGIONAL 1":"#E63946","REGIONAL 2":"#F4A261","REGIONAL 3":"#2A9D8F",
-  "REGIONAL 4":"#457B9D","REGIONAL 5":"#9B5DE5","REGIONAL 6":"#F9C74F",
-  "REGIONAL 7":"#FF6B6B","REGIONAL 8":"#118AB2","REGIONAL 9":"#06D6A0"
-};
-
-const STORES=[
-  {id:11,n:"RMMG",addr:"AV. GERALDO ROCHA, 800 - CHÁCARA COTIA, CONTAGEM - MG, 32183-054",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"55.872.858/0001-38",lat:-19.78521789691145,lon:-43.9163851510395},
-  {id:201,n:"DIVINÓPOLIS",addr:"AV. AUTORAMA, 1313 - Nº 201 - SÃO JUDAS TADEU, DIVINÓPOLIS - MG, 35501-221",city:"DIVINÓPOLIS",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0001-38",lat:-19.869766049397757,lon:-44.03046943560939},
-  {id:202,n:"CONTAGEM",addr:"AV. CRUZEIRO DO SUL, 77 - JARDIM RIACHO DAS PEDRAS, CONTAGEM - MG, 32241-310",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0002-19",lat:-20.158356556133743,lon:-44.91191134609734},
-  {id:203,n:"ADM",addr:"AV. BARÃO HOMEM DE MELO, 3090 - ESTORIL, BELO HORIZONTE - MG, 30494-085",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0003-08",lat:-19.95924114572572,lon:-44.05998781856016},
-  {id:204,n:"SANTA LUZIA",addr:"DISTRITO INDUSTRIAL - AV. DAS INDÚSTRIAS, 2915 - DESEMBARGADOR MELLO JUNIOR, SANTA LUZIA - MG, 33040-270",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0004-80",lat:-19.962533891934957,lon:-43.96411301939895},
-  {id:205,n:"GOVERNADOR VALADARES",addr:"AV. JK, 3519 - SANTA RITA, GOV. VALADARES - MG, 35040-260",city:"GOV. VALADARES",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0005-61",lat:-19.794537622279712,lon:-43.87868331266979},
-  {id:206,n:"JUIZ DE FORA",addr:"AV. PRESIDENTE JUSCELINO KUBITSCHEK, 51 - INDUSTRIAL, JUIZ DE FORA - MG, 36081-000",city:"JUIZ DE FORA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0006-42",lat:-18.889380740278884,lon:-41.972807486426575},
-  {id:207,n:"UBERABA",addr:"AV. SANTOS DUMONT, 1555 - SANTA MARIA, UBERABA - MG, 38050-400",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0007-23",lat:-21.737756084656816,lon:-43.38832587700197},
-  {id:209,n:"SETE LAGOAS",addr:"R. AFONSO CARLOS CAPANEMA, 501 - SANTO ANTONIO, SETE LAGOAS - MG, 35701-248",city:"SETE LAGOAS",r:"REGIONAL 8",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0009-95",lat:-19.75372917398248,lon:-47.94942476358565},
-  {id:210,n:"UBERLÂNDIA",addr:"R. CLEONE CAIRO GOMES, 777 - SEGISMUNDO PEREIRA, UBERLÂNDIA - MG, 33840-242",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0010-29",lat:-19.483398647155003,lon:-44.25972440849991},
-  {id:211,n:"SÃO JOAQUIM",addr:"R. DIAMANTE, 1280 - SÃO JOAQUIM, CONTAGEM - MG, 32113-000",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0011-00",lat:-18.91946395032228,lon:-48.223783628038014},
-  {id:212,n:"CD - HORTI",addr:"AV. GERALDO ROCHA, 800 - CHÁCARA COTIA, CONTAGEM - MG, 32183-054",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0012-90",lat:-19.88226020439116,lon:-44.02869024319334},
-  {id:213,n:"PATOS DE MINAS",addr:"AV. FÁTIMA PORTO, 4065 - JARDIM ANDRADES, PATOS DE MINAS - MG, 38706-093",city:"PATOS DE MINAS",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0013-71",lat:-19.869816481427936,lon:-44.030625009611086},
-  {id:214,n:"ITUIUTABA",addr:"AVENIDA MINAS GERAIS, Nº 2901 GERSON BADUY II, ITUIUTABA - MG, 38304-285",city:"ITUIUTABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0014-52",lat:-18.60674581778716,lon:-46.51209380655581},
-  {id:215,n:"ALFENAS",addr:"AV. MÁRIO BARBOSA VIEIRA, 250 - LOTEAMENTO TREVO, ALFENAS - MG, 37130-000",city:"ALFENAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0015-33",lat:-18.994630357206827,lon:-49.46741777710556},
-  {id:216,n:"POUSO ALEGRE",addr:"BR 459, KM 103, S/Nº - FATIMA, POUSO ALEGRE - MG, 37550-000",city:"POUSO ALEGRE",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0016-14",lat:-21.447094064695296,lon:-45.948899090506046},
-  {id:217,n:"SANTANA PARAÍSO",addr:"R. 3, Nº 173 - PARQUE VENEZA, SANTANA DO PARAÍSO - MG, 35167-000",city:"SANTANA DO PARAÍSO",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0017-03",lat:-22.22389727059689,lon:-45.91148559047468},
-  {id:218,n:"ARAPORÃ",addr:"AV. SANTA BÁRBARA, Nº 13, ARAPORÃ - MG, 38435-000",city:"ARAPORÃ",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0018-86",lat:-19.45529218262607,lon:-42.51954379654848},
-  {id:219,n:"MONTES CLAROS",addr:"AV. FRANCISCO GAETANI, 2029 - MAJ. PRATES, MONTES CLAROS - MG, 39403-202",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0019-67",lat:-18.42760318211768,lon:-49.19386105645576},
-  {id:220,n:"UBÁ",addr:"RODOVIA MGT 265, Nº 2650 EIXO RODOVIÁRIO, UBÁ - MG, 36500-000",city:"UBÁ",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0020-09",lat:-16.75886589425841,lon:-43.88311793855313},
-  {id:221,n:"ARAGUARI",addr:"AV. TEODORETO VELOSO DE CARVALHO, 3800 - SIBIPIRUNA, ARAGUARI - MG, 38445-198",city:"ARAGUARI",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0021-81",lat:-21.12089100933628,lon:-42.97099830986183},
-  {id:222,n:"UBERLÂNDIA II",addr:"R. DIAMANTE, 196 - JARDIM PATRICIA, UBERLÂNDIA - MG, 38414-150",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0022-62",lat:-18.65464236988265,lon:-48.150501704102616},
-  {id:223,n:"UBERABA II",addr:"AVENIDA A, 507 - PARQUE DAS LARANJEIRAS, UBERABA - MG, 38046-395",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0023-43",lat:-18.90671183211583,lon:-48.32277080594461},
-  {id:224,n:"PARACATU",addr:"R. BRASÍLIA, 460 - AMOREIRAS II, PARACATU - MG, 38608-264",city:"PARACATU",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0024-24",lat:-19.778085297634767,lon:-47.97262687544852},
-  {id:225,n:"PATROCÍNIO",addr:"AV. FARIA PEREIRA, 4554 - INDUSTRIAL, PATROCÍNIO - MG, 38740-512",city:"PATROCÍNIO",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0025-05",lat:-17.208642401068083,lon:-46.87641513113616},
-  {id:226,n:"PARÁ DE MINAS",addr:"AV. PRES. VARGAS, 3465 - MART MINAS, PARÁ DE MINAS - MG, 35660-970",city:"PARÁ DE MINAS",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0026-96",lat:-18.946260054447396,lon:-47.01411965752472},
-  {id:227,n:"TRÊS CORAÇÕES",addr:"AV. REI PELÉ, 3000 - CIDADE JARDIM, TRÊS CORAÇÕES - MG, 37411-150",city:"TRÊS CORAÇÕES",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0027-77",lat:-19.8569296083505,lon:-44.57552643474613},
-  {id:228,n:"ARAXÁ",addr:"AV. TENENTE-CORONEL HERMENEGILDO MAGALHÃES, 500 - OROZINO TEIXEIRA, ARAXÁ - MG, 38181-431",city:"ARAXÁ",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0028-58",lat:-21.66290260078823,lon:-45.280793892348136},
-  {id:229,n:"LAVRAS",addr:"R. PAULO CAMILO DE FIGUEIREDO, Nº 67 - JARDIM FLORESTA, LAVRAS - MG, 37200-000",city:"LAVRAS",r:"REGIONAL 5",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0029-39",lat:-19.577491065109157,lon:-46.922463732956906},
-  {id:230,n:"BARBACENA",addr:"R. DEMÉTRIO RIBEIRO, Nº 1125 - SANTO ANTÔNIO, BARBACENA - MG, 36204-230",city:"BARBACENA",r:"REGIONAL 6",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0030-72",lat:-21.2632292254985,lon:-45.00165745426223},
-  {id:231,n:"PASSOS",addr:"AV. ARLINDO FIGUEIREDO, 2211 - SÃO FRANCISCO, PASSOS - MG, 37902-027",city:"PASSOS",r:"REGIONAL 9",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0031-53",lat:-21.193937624823555,lon:-43.75744953811624},
-  {id:232,n:"ITAÚNA",addr:"R. JACINTO FERREIRA, 491 - VILA TAVARES, ITAÚNA - MG, 35680-070",city:"ITAÚNA",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0032-34",lat:-20.733514030382363,lon:-46.63056469332538},
-  {id:233,n:"TEÓFILO OTONI",addr:"AV. DR. LUIZ BOALI PORTO SALMAN, 2400 - CASTRO PIRES, TEÓFILO OTONI - MG, 39801-610",city:"TEÓFILO OTONI",r:"REGIONAL 2",meso:"VALE DO MUCURI",cnpj:"04.737.552/0033-15",lat:-20.06671600741403,lon:-44.57058569187185},
-  {id:234,n:"CONS LAFAIETE",addr:"BR-040, KM 627 - Nº 27900 - CARIJÓS, CONSELHEIRO LAFAIETE - MG, 36406-080",city:"CONSELHEIRO LAFAIETE",r:"REGIONAL 6",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0034-04",lat:-17.870952753495533,lon:-41.49159951708399},
-  {id:235,n:"DAVID SARNOFF",addr:"AV. GENERAL DAVID SARNOFF, 3185 - GALPÃO 1 E 2 E 3 - CIDADE INDUSTRIAL, CONTAGEM - MG, 32210-110",city:"CONTAGEM",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0035-87",lat:-20.671858709580956,lon:-43.79934658498443},
-  {id:236,n:"VARGINHA",addr:"AV. DR. MARIO FROTA, Nº 200 - SANTA MARIA, VARGINHA - MG, 37044-270",city:"VARGINHA",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0036-68",lat:-19.962380097958132,lon:-44.02167863290924},
-  {id:237,n:"DIVINÓPOLIS II",addr:"R. RIO DE JANEIRO, Nº2220 - IPIRANGA, DIVINÓPOLIS - MG, 35502-456",city:"DIVINÓPOLIS",r:"REGIONAL 9",meso:"OESTE DE MINAS",cnpj:"04.737.552/0037-49",lat:-21.560690147180438,lon:-45.42555322595695},
-  {id:238,n:"UBERLÂNDIA III",addr:"AV. VER. CARLITO CORDEIRO, 41 - JARDIM BOTÂNICO, UBERLÂNDIA - MG, 38410-665",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0038-20",lat:-20.135732384994007,lon:-44.90724182124311},
-  {id:239,n:"ITABIRA",addr:"AV. DR. PEDRO GUERRA, 1282 - GABIROBA, ITABIRA - MG, 35900-970",city:"ITABIRA",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0039-00",lat:-18.935183651359715,lon:-48.25987671943603},
-  {id:240,n:"UNAÍ",addr:"R. ARLÍNDO GOMES BRANQUINHO, Nº 35 - CAPIM BRANCO, UNAÍ - MG, 38616-114",city:"UNAÍ",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0040-44",lat:-19.658539242206565,lon:-43.21379132866342},
-  {id:241,n:"SÃO JOÃO DEL REI",addr:"AV. TRINTA E UM DE MARÇO, Nº 4.000 - SÃO FRANCISCO (COLÔNIA DO MARÇAL), SÃO JOÃO DEL REI - MG, 36302-016",city:"SÃO JOÃO DEL REI",r:"REGIONAL 6",meso:"CAMPO DAS VERTENTES",cnpj:"04.737.552/0041-25",lat:-16.377675904890953,lon:-46.90066210038812},
-  {id:242,n:"POÇOS DE CALDAS",addr:"AV. ALCOA, 1133 - JARDIM PARAISO, POÇOS DE CALDAS - MG, 37706-078",city:"POÇOS DE CALDAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0042-06",lat:-21.0907868894903,lon:-44.23073841565464},
-  {id:244,n:"JOÃO MONLEVADE",addr:"ESTR. AC. A AVENIDA ALBERTO DE LIMA, 1655 - NOVA ACLIMAÇÃO, JOÃO MONLEVADE - MG, 35931-185",city:"JOÃO MONLEVADE",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0044-78",lat:-21.82437894466801,lon:-46.55395003003401},
-  {id:245,n:"PATOS DE MINAS II",addr:"AV. MARABÁ, Nº4587 - BELA VISTA, PATOS DE MINAS - MG, 38703-236",city:"PATOS DE MINAS",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0045-59",lat:-19.82598124494739,lon:-43.187858473175005},
-  {id:246,n:"UBERLÂNDIA IV",addr:"AV. ANTÔNIO THOMAZ FERREIRA DE REZENDE, 703 - MARTA HELENA, UBERLÂNDIA - MG, 38402-236",city:"UBERLÂNDIA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0046-30",lat:-18.56737765230724,lon:-46.47184680040445},
-  {id:247,n:"BOM DESPACHO",addr:"AV. DR. ROBERTO DE MELO QUEIROZ, Nº 1.793 - NOVO SÃO JOÃO, BOM DESPACHO - MG, 35600-000",city:"BOM DESPACHO",r:"REGIONAL 9",meso:"CENTRAL MINEIRA",cnpj:"04.737.552/0047-10",lat:-18.880738892573387,lon:-48.271739488687615},
-  {id:248,n:"CAMPO BELO",addr:"AV. SÃO JOÃO, Nº 1.305 - JARDIM AMÉRICA, CAMPO BELO - MG, 37270-000",city:"CAMPO BELO",r:"REGIONAL 5",meso:"OESTE DE MINAS",cnpj:"04.737.552/0048-00",lat:-19.7459458028876,lon:-45.25403295375416},
-  {id:249,n:"MONTE CARMELO",addr:"AV. DAS PALMEIRAS, 370 - GOLDEN PARK, MONTE CARMELO - MG, 38500-000",city:"MONTE CARMELO",r:"REGIONAL 4",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0049-82",lat:-20.9019812686312,lon:-45.26356922012016},
-  {id:250,n:"JANAÚBA",addr:"AV. BRASIL, 1.701 - ESPLANADA, JANAÚBA - MG, 39445-102",city:"JANAÚBA",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0050-16",lat:-18.74243180885708,lon:-47.50691416593801},
-  {id:251,n:"SERRANO",addr:"AV. HERÁCLITO MOURÃO DE MIRANDA, 91 - SERRANO, BELO HORIZONTE - MG, 30882-150",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0051-05",lat:-15.812588987304338,lon:-43.31521400234354},
-  {id:252,n:"NOVA LIMA",addr:"ROD. JOSÉ FRANCISCO DA SILVA, KM 24 - Nº 250 - CHÁCARA BOM RETIRO, NOVA LIMA - MG, 34002-000",city:"NOVA LIMA",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0052-88",lat:-19.89279228211527,lon:-44.008435299619634},
-  {id:253,n:"JUIZ DE FORA II",addr:"AV. DEUSDEDITH SALGADO, 4895 - TEIXEIRAS, JUIZ DE FORA - MG, 36033-000",city:"JUIZ DE FORA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0053-69",lat:-20.00700930844473,lon:-43.85717626212444},
-  {id:254,n:"JOÃO PINHEIRO",addr:"AV. MÁRIO JOSÉ DA SILVEIRA, 1151 - DIVINÓPOLIS, JOÃO PINHEIRO - MG, 38770-000",city:"JOÃO PINHEIRO",r:"REGIONAL 4",meso:"NOROESTE DE MINAS",cnpj:"04.737.552/0054-40",lat:-21.813304683197845,lon:-43.37485636219356},
-  {id:255,n:"LEOPOLDINA",addr:"R. CARMITA MONTEIRO, 400 - 36700-000 - ALTO DO CEMITERIO, LEOPOLDINA - MG, 36704-182",city:"LEOPOLDINA",r:"REGIONAL 6",meso:"ZONA DA MATA",cnpj:"04.737.552/0055-20",lat:-17.73307148703538,lon:-46.17719363465529},
-  {id:256,n:"CARATINGA",addr:"AV. PROF. ARMANDO ALVES DA SILVA - ZACARIAS, CARATINGA - MG, 35302-403",city:"CARATINGA",r:"REGIONAL 2",meso:"VALE DO RIO DOCE",cnpj:"04.737.552/0056-01",lat:-21.51992348198861,lon:-42.647556546240814},
-  {id:257,n:"CONGONHAS",addr:"R. SARDENHA, 315 - JARDIM VILA ANDREZA, CONGONHAS - MG, 36410-264",city:"CONGONHAS",r:"REGIONAL 6",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0057-92",lat:-19.761032925983624,lon:-42.13694626581181},
-  {id:258,n:"TRÊS PONTAS",addr:"AVENIDA PREFEITO AVENIDA PREFEITO, AV. NILSON JOSÉ VILÉLA, 350 - ESPERANÇA, TRÊS PONTAS - MG, 37190-000",city:"TRÊS PONTAS",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0058-73",lat:-20.50363189949023,lon:-43.8442211193786},
-  {id:259,n:"MONTES CLAROS II",addr:"AV. INDEPENDÊNCIA, 2222 - MONTE CARMELO, MONTES CLAROS - MG, 39404-286",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0059-54",lat:-21.379160895418572,lon:-45.4968298225079},
-  {id:260,n:"MONTES CLAROS III",addr:"AV. COMENDADOR ANTONIO LOUREIRO RAMOS, 88 - DISTRITO INDUSTRIAL, MONTES CLAROS - MG",city:"MONTES CLAROS",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0060-98",lat:-16.71997011893492,lon:-43.83378471961986},
-  {id:261,n:"VESPASIANO",addr:"R. MANOEL BERTOLDO FAGUNDES, 150 - LOJA 55 - FAGUNDES, VESPASIANO - MG, 33200-702",city:"VESPASIANO",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0061-79",lat:-16.690249032427836,lon:-43.87172649782643},
-  {id:262,n:"BETIM 1",addr:"AV. EDMEIA MATOS LAZZAROTTI, 3152 - INGÁ, BETIM - MG, 32604-446",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0062-50",lat:-19.68310724078937,lon:-43.93333579666341},
-  {id:263,n:"LINHA VERDE BH",addr:"ROD. PAPA JOÃO PAULO II, 1990 - JAQUELINE, BELO HORIZONTE - MG, 31748-042",city:"BELO HORIZONTE",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0063-30",lat:-19.95070079067517,lon:-44.19376399358252},
-  {id:264,n:"EXTREMA",addr:"EST. MUN. BENEDITA AP DE LIMA - EXTREMA, MG, 37640-000",city:"EXTREMA",r:"REGIONAL 5",meso:"SUL E SUDOESTE DE MINAS",cnpj:"04.737.552/0064-11",lat:-19.80253219968932,lon:-43.9486412730875},
-  {id:265,n:"UBERABA III",addr:"R. MARIA BÁRBARA SOUZA, 975 - OLINDA, UBERABA - MG, 38055-690",city:"UBERABA",r:"REGIONAL 3",meso:"TRIÂNGULO MINEIRO E ALTO PARANAÍBA",cnpj:"04.737.552/0065-00",lat:-22.833554096467864,lon:-46.31614043359215},
-  {id:267,n:"CURVELO",addr:"AVENIDA DOUTOR DALTON MOREIRA CANABRAVA, 860 - BELA VISTA, CURVELO - MG, 35796-219",city:"CURVELO",r:"REGIONAL 8",meso:"CENTRAL MINEIRA",cnpj:"04.737.552/0067-64",lat:-19.74984034547701,lon:-47.97182540584031},
-  {id:271,n:"BETIM II",addr:"VIA DE ACESSO A VIA EXPRESSA, 13300 - VILA CRISTINA, BETIM - MG",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0071-40",lat:-18.76567622153658,lon:-44.4515254549556},
-  {id:272,n:"PIRAPORA",addr:"AV. JEFFERSON GITIRANA, 905-823 - SANTOS DUMONT, PIRAPORA - MG, 39270-000",city:"PIRAPORA",r:"REGIONAL 4",meso:"NORTE DE MINAS",cnpj:"04.737.552/0072-21",lat:-19.93453797679283,lon:-44.144688159228096},
-  {id:273,n:"BARREIRO",addr:"AVENIDA AFONSO VAZ DE MELO, 1795, DIAMANTE, BELO HORIZONTE - MG, 30.640-070",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0073-02",lat:-17.335767375086753,lon:-44.926671211549575},
-  {id:274,n:"JANUARIA",addr:"AV. MAL. DEODORO DA FONSECA, 1015 - SÃO MIGUEL, JANUÁRIA - MG, 39480-000",city:"JANUÁRIA",r:"REGIONAL 8",meso:"NORTE DE MINAS",cnpj:"04.737.552/0074-93",lat:-19.980885410609883,lon:-44.0291868350116},
-  {id:276,n:"IBIRITÉ",addr:"RODOVIA RENATO BRANDÃO AZEREDO, Nº 780 - PIRATININGA, IBIRITÉ - MG, 32.423-535",city:"IBIRITÉ",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0076-55",lat:-19.98092096218856,lon:-44.02922004016878},
-  {id:277,n:"SABARA",addr:"AV. JOSÉ CÂNDIDO DA SILVEIRA, 2996 - ANA LÚCIA, SABARÁ - MG, 34710-138",city:"CAETÉ",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0077-36",lat:-20.00155866121231,lon:-44.0583401240912},
-  {id:278,n:"RIBEIRÃO DAS NEVES",addr:"AV. IVO GOMES DE ABREU, 101 - PORTO SEGURO, RIBEIRÃO DAS NEVES - MG, 33863-001",city:"RIBEIRÃO DAS NEVES",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0078-17",lat:-19.87607035338968,lon:-43.90857465008847},
-  {id:279,n:"LAGOA SANTA",addr:"AV. PREF. JOÃO DAHER, 787 - VILA PINTO COELHO, LAGOA SANTA - MG, 33400-000",city:"LAGOA SANTA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0079-06",lat:-19.779414744851824,lon:-44.0758657217837},
-  {id:280,n:"PEDRO LEOPOLDO",addr:"R. FERNANDO GONÇALVES DA SILVA, 130 - NOVO CAMPINHO, PEDRO LEOPOLDO - MG, 33254-106",city:"PEDRO LEOPOLDO",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0080-31",lat:-19.629532680586905,lon:-43.89958600221734},
-  {id:281,n:"CAETE",addr:"AV. DOUTOR JOÃO PINHEIRO, 4845, CENTRO - CAETÉ - MG, 34.800-000",city:"SABARÁ",r:"REGIONAL 2",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0081-12",lat:-19.5990101351732,lon:-44.04526718017467},
-  {id:283,n:"SILVA LOBO",addr:"AV. SILVA LOBO, 900 - NOVA SUÍÇA, BELO HORIZONTE - MG, 30460-000",city:"BELO HORIZONTE",r:"REGIONAL 1",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0083-84",lat:-19.872450012107198,lon:-43.66167121940224},
-  {id:284,n:"SETE LAGOAS II",addr:"AV. PREF. ALBERTO MOURA, 1260 - DISTRITO INDUSTRIAL, SETE LAGOAS - MG, 35702-383",city:"SETE LAGOAS",r:"REGIONAL 8",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0084-65",lat:-19.93314575622195,lon:-43.972419134354176},
-  {id:285,n:"BETIM III",addr:"AV. JUIZ MARCO TÚLIO ISAAC, 10 - 293 - LARANJEIRAS, BETIM - MG, 32676-435",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0085-46",lat:-19.439118183618827,lon:-44.21737128933039},
-  {id:286,n:"FLORAMAR",addr:"AV. CRISTIANO MACHADO, 10.732 - FLORAMAR, BELO HORIZONTE - MG, 31260-500",city:"BELO HORIZONTE",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0086-27",lat:-19.94696993100248,lon:-44.1261894817751},
-  {id:287,n:"BETIM IV",addr:"AV. EDMEIA MATOS LAZZAROTTI, 4455 - SRA. DAS GRAÇAS, BETIM - MG, 32630-080",city:"BETIM",r:"REGIONAL 9",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0087-08",lat:-19.829322841734538,lon:-43.941490963106496},
-  {id:288,n:"SANTA LUZIA II",addr:"R. JOSÉ TÓFANI, 35 - SÃO JOÃO BATISTA, SANTA LUZIA - MG, 33030-005",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0088-99",lat:-19.94159639592507,lon:-44.18720420808593},
-  {id:289,n:"SANTA LUZIA III",addr:"AV. BRASÍLIA, 3470 - SÃO BENEDITO, SANTA LUZIA - MG, 33110-190",city:"SANTA LUZIA",r:"REGIONAL 7",meso:"METROPOLITANA DE BELO HORIZONTE",cnpj:"04.737.552/0089-70",lat:-19.76988430603039,lon:-43.87055227100312}
-];
-
-// ── MAPA ─────────────────────────────────────────────────────────────────────
-const map = L.map('map',{center:[-18.5,-44.8],zoom:7,zoomControl:true});
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-  subdomains:'abcd', maxZoom:19
-}).addTo(map);
-
-// ── CAMADAS ──────────────────────────────────────────────────────────────────
-let estadoLayer = L.layerGroup().addTo(map);
-let lojasLayer  = L.layerGroup().addTo(map);
-
-// ── 1. LIMITE ESTADUAL MG ─────────────────────────────────────────────────────
-fetch('https://raw.githubusercontent.com/giuliano-macedo/geodata-br-states/main/geojson/br_states/br_mg.json')
-  .then(r => r.json())
-  .then(geojsonMG => {
-    var mg = L.geoJSON(geojsonMG, {
-      style: { color:'#000000', weight:2.5, fillColor:'transparent', fillOpacity:0 }
-    });
-    estadoLayer.addLayer(mg);
-    map.fitBounds(mg.getBounds());
-  });
-
-
-// ── 3. MARKERS LOJAS (geocoding via Nominatim) ───────────────────────────────
-const storeMarkers = [];
-const CACHE_KEY = 'lojas_mg_geocache_v4';
-
-function makeIcon(col){
-  return L.divIcon({
-    className:'',
-    html:`<div style="width:12px;height:12px;border-radius:50%;background:${col};border:2.5px solid rgba(255,255,255,.88);box-shadow:0 2px 8px rgba(0,0,0,.6);cursor:pointer"></div>`,
-    iconAnchor:[6,6], iconSize:[12,12]
-  });
+function fetchAndDrawMeso(name, code) {
+  if(mesoLayers[name]) return;
+  if(mesoGeoCache[code]) { drawMesoLayer(name, mesoGeoCache[code]); return; }
+  fetch(`https://servicodados.ibge.gov.br/api/v3/malhas/mesorregioes/${code}?formato=application/vnd.geo+json`)
+    .then(r=>r.json())
+    .then(geo=>{ mesoGeoCache[code]=geo; drawMesoLayer(name, geo); })
+    .catch(()=>{});
 }
 
-function makePopup(s, col){
-  return `<div style="min-width:220px;max-width:280px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
-      <span style="font-size:13px;font-weight:800;color:#0d2d4e">Loja ${s.id} — ${s.n}</span>
+function drawMesoLayer(name, geo) {
+  const layer = L.geoJSON(geo,{
+    style:{color:'#18160f', weight:0.8, opacity:0.2, fillOpacity:0}
+  });
+  layer.bindTooltip(`<div class="meso-tip">${name}</div>`,{sticky:true,offset:[10,0]});
+  mesoLayers[name] = layer;
+  layer.addTo(map);
+  layer.bringToBack();
+}
+
+loadMesoBorders();
+
+// ── DATA STATE ──
+let STORES = []; // processed store data after upload
+
+// ── UPLOAD LOGIC ──
+const fileInput = document.getElementById('file-input');
+const dropZone  = document.getElementById('drop-zone');
+const uploadStatus = document.getElementById('upload-status');
+const progressBar  = document.getElementById('progress-bar');
+const progressFill = document.getElementById('progress-fill');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f) processFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if(fileInput.files[0]) processFile(fileInput.files[0]);
+});
+
+function openUpload() {
+  document.getElementById('upload-overlay').style.display = 'flex';
+}
+
+function setStatus(msg, type='') {
+  uploadStatus.textContent = msg;
+  uploadStatus.className = 'upload-status' + (type ? ' '+type : '');
+}
+
+function setProgress(pct) {
+  progressBar.style.display = 'block';
+  progressFill.style.width = pct + '%';
+}
+
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xlsm','xls'].includes(ext)) {
+    setStatus('Formato inválido. Use .xlsx, .xlsm ou .xls', 'error');
+    return;
+  }
+  setStatus('Lendo arquivo...');
+  setProgress(10);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      setProgress(30);
+      setStatus('Processando planilha...');
+
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+
+      // Need CHAMADOS sheet
+      if(!wb.SheetNames.includes('CHAMADOS')) {
+        setStatus('Aba "CHAMADOS" não encontrada na planilha.', 'error');
+        return;
+      }
+
+      setProgress(50);
+      const ws = wb.Sheets['CHAMADOS'];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:null});
+
+      setProgress(70);
+      setStatus(`Processando ${rows.length.toLocaleString('pt-BR')} chamados...`);
+
+      // Process rows into store-grouped structure
+      buildStores(rows);
+
+      setProgress(100);
+      setStatus(`✓ ${rows.length.toLocaleString('pt-BR')} chamados carregados com sucesso!`, 'success');
+
+      setTimeout(() => {
+        document.getElementById('upload-overlay').style.display = 'none';
+        enableFilters();
+        initFilters();
+        applyFilters();
+      }, 800);
+
+    } catch(err) {
+      console.error(err);
+      setStatus('Erro ao processar planilha: ' + err.message, 'error');
+      progressBar.style.display = 'none';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resolveStatus(rawStatus) {
+  if(!rawStatus) return 'ABERTOS';
+  const k = String(rawStatus).trim().toUpperCase();
+  return STATUS_MAP[Object.keys(STATUS_MAP).find(s => s.toUpperCase() === k)] || 'ABERTOS';
+}
+
+function resolveMateriaCelula(grupo, servico) {
+  // Try GRUPO first
+  if(grupo) {
+    const g = String(grupo).trim();
+    if(GRUPO_MAP[g]) return GRUPO_MAP[g];
+    // fuzzy: find key that matches
+    const found = Object.keys(GRUPO_MAP).find(k => k.toLowerCase() === g.toLowerCase());
+    if(found) return GRUPO_MAP[found];
+  }
+  return {m:'-', c:'-'};
+}
+
+function buildStores(rows) {
+  const storeMap = {};
+
+  rows.forEach(row => {
+    const codigo  = row['CÓDIGO'] || row['CODIGO'];
+    if(!codigo) return;
+
+    // Extract loja number from UNIDADE: "203 - NOME" -> "203"
+    const unidade = row['UNIDADE'] || '';
+    const lojaMatch = String(unidade).match(/^(\d{3})/);
+    if(!lojaMatch) return;
+    const lojaNum = lojaMatch[1];
+
+    const geoData = GEO[lojaNum];
+    if(!geoData) return;
+
+    // Resolve status
+    const rawStatus = row['STATUS'] || '';
+    const status = resolveStatus(rawStatus);
+
+    // Resolve materia & celula
+    const grupo = row['GRUPO'] || '';
+    const servico = row['SERVIÇO'] || row['SERVICO'] || '';
+    let mc = resolveMateriaCelula(grupo, servico);
+
+    // Use CELULAS column if available (already computed in sheet)
+    const celulaCol = row['CELULAS'] || row['CELULA'];
+    const celula = (celulaCol && String(celulaCol).trim() !== '') ? String(celulaCol).trim() : mc.c;
+
+    // Get year from ABERTURA
+    let ano = '-';
+    const abertura = row['ABERTURA'];
+    if(abertura instanceof Date) {
+      ano = String(abertura.getFullYear());
+    } else if(abertura) {
+      const d = new Date(abertura);
+      if(!isNaN(d)) ano = String(d.getFullYear());
+    }
+
+    if(!storeMap[lojaNum]) {
+      storeMap[lojaNum] = {
+        loja: lojaNum,
+        filial: String(unidade).trim(),
+        cidade: geoData.cidade,
+        mesoregiao: geoData.mesoregiao,
+        regional: geoData.regional,
+        cnpj: geoData.cnpj,
+        lat: geoData.lat,
+        lon: geoData.lon,
+        t: []
+      };
+    }
+
+    storeMap[lojaNum].t.push([celula, mc.m, status, ano]);
+  });
+
+  STORES = Object.values(storeMap);
+  console.log(`Lojas carregadas: ${STORES.length}`);
+}
+
+// ── FILTERS ──
+const fReg  = document.getElementById('f-reg');
+const fMeso = document.getElementById('f-meso');
+const fCel  = document.getElementById('f-cel');
+const fGrp  = document.getElementById('f-grp');
+const fStat = document.getElementById('f-stat');
+const fAno  = document.getElementById('f-ano');
+
+function enableFilters() {
+  [fReg, fMeso, fCel, fGrp, fStat, fAno].forEach(s => s.disabled = false);
+  document.getElementById('btn-limpar').disabled = false;
+}
+
+function initFilters() {
+  // Populate regional
+  const regionais = [...new Set(STORES.map(s=>s.regional))].sort();
+  fReg.innerHTML = '<option value="">Todas</option>';
+  regionais.forEach(r => fReg.innerHTML += `<option>${r}</option>`);
+
+  // Populate meso
+  const mesos = [...new Set(STORES.map(s=>s.mesoregiao))].sort();
+  fMeso.innerHTML = '<option value="">Todas</option>';
+  mesos.forEach(m => fMeso.innerHTML += `<option>${m}</option>`);
+
+  // Populate years dynamically
+  const anos = [...new Set(STORES.flatMap(s=>s.t.map(t=>t[3])).filter(a=>a!=='-'))].sort();
+  fAno.innerHTML = '<option value="">Todos</option>';
+  anos.forEach(a => fAno.innerHTML += `<option>${a}</option>`);
+}
+
+function filterTickets(tickets, cel, grp, stat, ano) {
+  return tickets.filter(t=>
+    (!cel  || t[0]===cel)  &&
+    (!grp  || t[1]===grp)  &&
+    (!stat || t[2]===stat) &&
+    (!ano  || t[3]===ano)
+  );
+}
+
+function countTickets(ft) {
+  let ab=0,enc=0,can=0;
+  ft.forEach(t=>{ if(t[2]==='ABERTOS') ab++; else if(t[2]==='ENCERRADOS') enc++; else can++; });
+  return {total:ft.length,ab,enc,can};
+}
+
+// ── POPUP ──
+function buildPopup(store, cel, grp, stat, ano) {
+  const color = RC[store.regional]||'#888';
+  const CELS  = cel ? [cel] : ['CELULA 01','CELULA 02','CELULA 03','CELULA 04'];
+  let grandTotal=0, grandAb=0;
+
+  const rows = CELS.map(c=>{
+    const ft  = filterTickets(store.t, c, grp, stat, ano);
+    const cnt = countTickets(ft);
+    if(cnt.total===0) return '';
+    grandTotal+=cnt.total; grandAb+=cnt.ab;
+    const pA=cnt.total?Math.round(cnt.ab/cnt.total*100):0;
+    const pE=cnt.total?Math.round(cnt.enc/cnt.total*100):0;
+    const pC=100-pA-pE;
+    const cc=CC[c]||'#888', cnum=c.replace('CELULA ','');
+    return `<div class="pu-cell-row">
+      <div class="pu-cell-head">
+        <span class="pu-cell-name" style="color:${cc}">Célula ${cnum}</span>
+        <div class="pu-cell-nums">
+          <span class="pu-cell-num cn-t">${cnt.total}</span>
+          ${cnt.ab ?`<span class="pu-cell-num cn-a">${cnt.ab} ab.</span>`:''}
+          ${cnt.enc?`<span class="pu-cell-num cn-e">${cnt.enc} enc.</span>`:''}
+          ${cnt.can?`<span class="pu-cell-num cn-c">${cnt.can} can.</span>`:''}
+        </div>
+      </div>
+      <div class="pu-bar">
+        <div class="pu-bar-a" style="width:${pA}%"></div>
+        <div class="pu-bar-e" style="width:${pE}%"></div>
+        <div class="pu-bar-c" style="width:${pC}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const af = [cel&&`Célula ${cel.slice(-2)}`,grp,stat,ano&&`${ano}`].filter(Boolean).join(' · ');
+  const mesoShort = store.mesoregiao.replace('METROPOLITANA DE BELO HORIZONTE','METRO BH');
+  const nomeFilial = store.filial.replace(/^\d{3}\s*-\s*/,'');
+
+  return `<div class="pu-head">
+    <div class="pu-id">Loja ${store.loja}</div>
+    <div class="pu-name">${nomeFilial}</div>
+    <div class="pu-meta">
+      <span class="pu-badge" style="background:${color}">${store.regional}</span>
+      <span class="pu-badge2">${mesoShort}</span>
     </div>
-    <div style="height:1px;background:#e2eaf2;margin-bottom:8px"></div>
-    <table style="font-size:11px;border-collapse:collapse;width:100%">
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Filial</td><td style="color:#0d2d4e;font-weight:700;padding:3px 0 3px 10px">${s.n}</td></tr>
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Cidade</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.city}</td></tr>
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Regional</td><td style="color:${col};font-weight:700;padding:3px 0 3px 10px">${s.r}</td></tr>
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">Mesorregião</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.meso}</td></tr>
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap">CNPJ</td><td style="color:#334155;font-weight:600;padding:3px 0 3px 10px">${s.cnpj}</td></tr>
-      <tr><td style="color:#94a3b8;padding:3px 0;white-space:nowrap;vertical-align:top">Endereço</td><td style="color:#334155;font-weight:500;padding:3px 0 3px 10px;line-height:1.4">${s.addr}</td></tr>
-    </table>
+  </div>
+  <div class="pu-info">
+    <div class="pu-info-item"><div class="pu-info-lbl">Cidade</div><div class="pu-info-val">${store.cidade}</div></div>
+    <div class="pu-info-item"><div class="pu-info-lbl">CNPJ</div><div class="pu-info-val" style="font-family:'DM Mono',monospace;font-size:10px">${store.cnpj}</div></div>
+  </div>
+  <div class="pu-cells">
+    <div class="pu-cells-title">Chamados por célula${af?' · '+af:''}</div>
+    ${rows||'<div style="font-size:11px;color:#9e9a90;padding:4px 0">Nenhum chamado com estes filtros</div>'}
+  </div>
+  <div class="pu-foot">
+    <span class="pu-foot-lbl">Total</span>
+    <span class="pu-foot-val">${grandTotal.toLocaleString('pt-BR')}</span>
   </div>`;
 }
 
-function placeMarker(s, lat, lon){
-  const col = COLORS[s.r] || '#888';
-  const mk = L.marker([lat, lon], {icon: makeIcon(col), zIndexOffset:500});
-  mk.storeData = s;
-  mk.bindPopup(makePopup(s, col), {maxWidth:300});
-  lojasLayer.addLayer(mk);
-  storeMarkers.push(mk);
-}
+// ── MARKERS ──
+let markers = [];
 
-// Status bar
-const statusEl = document.createElement('div');
-statusEl.style.cssText='position:absolute;bottom:36px;right:14px;background:rgba(255,255,255,.95);border:1px solid #d1dce8;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:#334155;z-index:400;box-shadow:0 2px 8px rgba(15,50,100,.1)';
-document.getElementById('map').appendChild(statusEl);
-
-// Load cache
-let cache = {};
-try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e){}
-
-// Separate cached vs needs geocoding
-const needsGeocode = [];
-STORES.forEach(s => {
-  if(cache[s.id]){
-    placeMarker(s, cache[s.id][0], cache[s.id][1]);
-  } else {
-    needsGeocode.push(s);
-  }
-});
-
-if(needsGeocode.length === 0){
-  statusEl.style.display='none';
-} else {
-  let idx = 0;
-  let done = STORES.length - needsGeocode.length;
-
-  statusEl.textContent = `Geocodificando lojas: ${done}/${STORES.length}`;
-
-  function geocodeNext(){
-    if(idx >= needsGeocode.length){
-      try{ localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }catch(e){}
-      statusEl.textContent = `✓ ${STORES.length} lojas posicionadas`;
-      setTimeout(()=>{ statusEl.style.display='none'; }, 3000);
-      return;
-    }
-    const s = needsGeocode[idx++];
-    // Use just street + city for better results
-    const q = encodeURIComponent(s.addr + ', Brasil');
-    const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=br`;
-
-    fetch(url, {headers:{'User-Agent':'lojas-mg-map/1.0 (educational)'}})
-      .then(r => r.json())
-      .then(data => {
-        let lat, lon;
-        if(data && data.length > 0){
-          lat = parseFloat(data[0].lat);
-          lon = parseFloat(data[0].lon);
-        } else {
-          // fallback to city coords already in STORES
-          lat = s.lat; lon = s.lon;
-        }
-        cache[s.id] = [lat, lon];
-        placeMarker(s, lat, lon);
-        done++;
-        statusEl.textContent = `Geocodificando lojas: ${done}/${STORES.length}`;
-        setTimeout(geocodeNext, 1100); // ~1 req/sec (Nominatim limit)
-      })
-      .catch(() => {
-        // On error use fallback coords
-        cache[s.id] = [s.lat, s.lon];
-        placeMarker(s, s.lat, s.lon);
-        done++;
-        setTimeout(geocodeNext, 1100);
-      });
-  }
-
-  geocodeNext();
-}
-
-
-// ── FILTRO ────────────────────────────────────────────────────────────────────
-let selReg='', selMeso='';
-const regC={}, mesoC={};
-STORES.forEach(s=>{ regC[s.r]=(regC[s.r]||0)+1; mesoC[s.meso]=(mesoC[s.meso]||0)+1; });
-
-const sReg = document.getElementById('sel-reg');
-const sMeso = document.getElementById('sel-meso');
-
-Object.keys(COLORS).forEach(r=>{
-  if(!regC[r]) return;
-  const o=document.createElement('option'); o.value=r;
-  o.textContent=`${r}  (${regC[r]} lojas)`; sReg.appendChild(o);
-});
-Object.keys(mesoC).sort().forEach(m=>{
-  const o=document.createElement('option'); o.value=m;
-  o.textContent=`${m}  (${mesoC[m]})`; sMeso.appendChild(o);
-});
-
-document.getElementById('kn').textContent = STORES.length;
-
-function applyFilter(){
-  let vis=0;
-  storeMarkers.forEach(mk=>{
-    const s=mk.storeData;
-    const show=(!selReg||s.r===selReg)&&(!selMeso||s.meso===selMeso);
-    const el=mk.getElement();
-    if(el){ el.style.opacity=show?'1':'0.05'; el.style.pointerEvents=show?'auto':'none'; }
-    if(show) vis++;
+function buildMarkers(cel, grp, stat, ano, regF, mesoF) {
+  markers.forEach(m=>map.removeLayer(m));
+  markers = [];
+  STORES.forEach(store=>{
+    if(regF  && store.regional   !== regF)  return;
+    if(mesoF && store.mesoregiao !== mesoF) return;
+    const ft = filterTickets(store.t, cel, grp, stat, ano);
+    if((cel||grp||stat||ano) && ft.length===0) return;
+    const color = RC[store.regional]||'#888';
+    const size  = 24;
+    const icon  = L.divIcon({
+      className:'',
+      html:`<div class="pin" style="background:${color};width:${size}px;height:${size}px"><span>${store.loja}</span></div>`,
+      iconSize:[size,size],iconAnchor:[size/2,size/2],popupAnchor:[0,-size/2-2]
+    });
+    const m = L.marker([store.lat,store.lon],{icon});
+    m.bindPopup(()=>buildPopup(store,cel,grp,stat,ano),{maxWidth:320,minWidth:300});
+    m._store=store; m._ft=ft;
+    markers.push(m);
+    m.addTo(map);
   });
-  document.getElementById('kn').textContent=vis;
-  document.getElementById('cbtn').classList.toggle('on',!!(selReg||selMeso));
-  document.querySelectorAll('.lr').forEach(r=>r.classList.toggle('hl',!!selReg&&r.dataset.r===selReg));
 }
 
-sReg.onchange=()=>{ selReg=sReg.value; document.getElementById('sw-reg').classList.toggle('active',!!selReg); applyFilter(); };
-sMeso.onchange=()=>{ selMeso=sMeso.value; document.getElementById('sw-meso').classList.toggle('active',!!selMeso); applyFilter(); };
-document.getElementById('cbtn').onclick=()=>{
-  selReg=''; selMeso=''; sReg.value=''; sMeso.value='';
-  ['sw-reg','sw-meso'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  applyFilter();
-};
+// ── APPLY FILTERS ──
+function applyFilters() {
+  if(STORES.length === 0) return;
+  const reg  = fReg.value, meso = fMeso.value;
+  const cel  = fCel.value, grp  = fGrp.value;
+  const stat = fStat.value, ano = fAno.value;
 
-// ── LEGENDA ───────────────────────────────────────────────────────────────────
-const legRows=document.getElementById('leg-rows');
-Object.keys(COLORS).forEach(r=>{
-  if(!regC[r]) return;
-  const row=document.createElement('div');
-  row.className='lr'; row.dataset.r=r;
-  row.innerHTML=`<div class="ld" style="background:${COLORS[r]}"></div><span class="ln">${r}</span><span class="lc">${regC[r]}</span>`;
-  row.onclick=()=>{
-    if(selReg===r){selReg='';sReg.value='';document.getElementById('sw-reg').classList.remove('active');}
-    else{selReg=r;sReg.value=r;document.getElementById('sw-reg').classList.add('active');}
-    applyFilter();
-  };
-  legRows.appendChild(row);
-});
+  buildMarkers(cel, grp, stat, ano, reg, meso);
+  updateLegend(reg);
 
-// ── TOGGLES ───────────────────────────────────────────────────────────────────
+  let totalCham=0, totalAb=0;
+  markers.forEach(m=>{ totalCham+=m._ft.length; totalAb+=m._ft.filter(t=>t[2]==='ABERTOS').length; });
+  document.getElementById('kv-lojas').textContent = markers.length.toLocaleString('pt-BR');
+  document.getElementById('kv-cham').textContent  = totalCham.toLocaleString('pt-BR');
+  document.getElementById('kv-ab').textContent    = totalAb.toLocaleString('pt-BR');
+}
 
-} // end init
-init();
-}); // end loadScript
+function resetFilters() {
+  fReg.value='';fMeso.value='';fCel.value='';fGrp.value='';fStat.value='';fAno.value='';
+  applyFilters();
+}
+
+// ── LEGEND ──
+function buildLegend() {
+  const c = document.getElementById('leg-reg'); c.innerHTML='';
+  const regionais = [...new Set(STORES.map(s=>s.regional))].sort();
+  regionais.forEach(reg=>{
+    const cnt = STORES.filter(s=>s.regional===reg).length;
+    const div = document.createElement('div');
+    div.className='legend-item'; div.dataset.reg=reg;
+    div.innerHTML=`<div class="legend-dot" style="background:${RC[reg]||'#888'}"></div><span class="legend-label">${reg.replace('REGIONAL ','Regional ')}</span><span class="legend-count">${cnt}</span>`;
+    div.onclick=()=>{ fReg.value=fReg.value===reg?'':reg; applyFilters(); };
+    c.appendChild(div);
+  });
+}
+
+function updateLegend(activeReg) {
+  document.querySelectorAll('.legend-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.reg===activeReg && !!activeReg);
+    el.classList.toggle('dimmed', !!activeReg && el.dataset.reg!==activeReg);
+  });
+}
+
+// Called after data loads
+function initFilters() {
+  const regionais = [...new Set(STORES.map(s=>s.regional))].sort();
+  fReg.innerHTML = '<option value="">Todas</option>';
+  regionais.forEach(r => fReg.innerHTML += `<option>${r}</option>`);
+
+  const mesos = [...new Set(STORES.map(s=>s.mesoregiao))].sort();
+  fMeso.innerHTML = '<option value="">Todas</option>';
+  mesos.forEach(m => fMeso.innerHTML += `<option>${m}</option>`);
+
+  const anos = [...new Set(STORES.flatMap(s=>s.t.map(t=>t[3])).filter(a=>a!=='-'))].sort();
+  fAno.innerHTML = '<option value="">Todos</option>';
+  anos.forEach(a => fAno.innerHTML += `<option>${a}</option>`);
+
+  buildLegend();
+}
 </script>
 </body>
 </html>
-
